@@ -2,6 +2,7 @@ package com.example
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import com.example.auth.{TapirAuthentication, TapirSecurity}
 import com.typesafe.scalalogging.LazyLogging
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
@@ -14,14 +15,10 @@ object TapirRoutes extends App with LazyLogging {
   implicit val actorSystem: ActorSystem = ActorSystem()
   import actorSystem.dispatcher
 
-  case class User(name: String, role: String)
-  def hasRole(user: User, role: String): Future[Either[Unit, User]] = Future.successful(if(user.role.equals(role)) Right(user) else Left(()) )
-  def authenticate(token: String): Future[Either[Unit, User]] = Future(Right(User("Peter", "User")))
+  val authentication = new TapirAuthentication()
+  val tapirSecurity = new TapirSecurity(authentication)
 
-  val tapirSecurityEndpoint = endpoint.securityIn(auth.bearer[String]())
-    .serverSecurityLogic(authenticate(_).flatMap(either => foldEitherOfFuture(either.map(hasRole(_, "Admin"))).map(_.flatten)))
-
-  val tapirEndpoint = tapirSecurityEndpoint.get.in("test").out(stringBody)
+  val tapirEndpoint = tapirSecurity.tapirSecurityEndpoint(List("User")).get.in("test").out(stringBody)
 
   val route = AkkaHttpServerInterpreter().toRoute(tapirEndpoint.serverLogic { user => input =>
     Future(Right(s"test ok response with user $user"))
@@ -36,10 +33,4 @@ object TapirRoutes extends App with LazyLogging {
   bindingFuture
     .flatMap(_.unbind())
     .onComplete(_ => actorSystem.terminate())
-
-  def foldEitherOfFuture[A, B](e: Either[A, Future[B]]): Future[Either[A, B]] =
-    e match {
-      case Left(s) => Future.successful(Left(s))
-      case Right(f) => f.map(Right(_))
-    }
 }
