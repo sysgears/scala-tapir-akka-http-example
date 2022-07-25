@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import com.example.auth.{TapirAuthentication, TapirSecurity}
 import com.typesafe.scalalogging.LazyLogging
+import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
 
@@ -18,7 +19,7 @@ object TapirRoutes extends App with LazyLogging {
   val authentication = new TapirAuthentication()
   val tapirSecurity = new TapirSecurity(authentication)
 
-  val tapirEndpoint = tapirSecurity.tapirSecurityEndpoint(List("User")).get.in("test").out(stringBody)
+  val tapirEndpoint = tapirSecurity.tapirSecurityEndpoint(List("Admin")).get.in("test").out(stringBody).out(statusCode(StatusCode.Created))
 
   val route = AkkaHttpServerInterpreter().toRoute(tapirEndpoint.serverLogic { user => input =>
     Future(Right(s"test ok response with user $user"))
