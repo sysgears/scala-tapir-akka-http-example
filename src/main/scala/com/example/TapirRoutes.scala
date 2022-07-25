@@ -3,7 +3,9 @@ package com.example
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import com.example.auth.{TapirAuthentication, TapirSecurity}
+import com.example.dao.UserDao
 import com.typesafe.scalalogging.LazyLogging
+import io.getquill.{PostgresJdbcContext, SnakeCase}
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
@@ -16,6 +18,8 @@ object TapirRoutes extends App with LazyLogging {
   implicit val actorSystem: ActorSystem = ActorSystem()
   import actorSystem.dispatcher
 
+  lazy val ctx = new PostgresJdbcContext(SnakeCase, "db.default")
+  val userDao = new UserDao(ctx)
   val authentication = new TapirAuthentication()
   val tapirSecurity = new TapirSecurity(authentication)
 
