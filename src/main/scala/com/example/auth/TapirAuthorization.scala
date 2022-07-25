@@ -8,5 +8,5 @@ import scala.concurrent.Future
 object TapirAuthorization {
 
   def isAuthorized(user: User, roles: List[String]): Future[Either[(StatusCode, AuthError), User]] =
-    Future.successful(if (roles.contains(user.role)) Right(user) else Left((StatusCode.Forbidden, AuthError("user is not allowed to use this endpoint"))))
+    Future.successful(if (roles.isEmpty || roles.contains(user.role)) Right(user) else Left((StatusCode.Forbidden, AuthError("user is not allowed to use this endpoint"))))
 }
