@@ -12,7 +12,7 @@ class UserDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit
   import context._
 
   private val users = quote {
-    querySchema[User]("user")
+    querySchema[User]("users")
   }
 
   def createUser(user: User): Future[Long] = Future {
@@ -23,11 +23,11 @@ class UserDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit
     run(users.filter(_.id == lift(user.id)).updateValue(lift(user)))
   }
 
-  def deleteUser(userId: Int): Future[Long] = Future {
+  def deleteUser(userId: Long): Future[Long] = Future {
     run(users.filter(_.id == lift(userId)).delete)
   }
 
-  def find(userId: Int): Future[Option[User]] = Future {
+  def find(userId: Long): Future[Option[User]] = Future {
     run(users.filter(_.id == lift(userId))).headOption
   }
 
