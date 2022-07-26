@@ -1,6 +1,5 @@
 package com.example.auth
 
-import com.example.auth.TapirAuthorization.isAuthorized
 import com.example.models.{AuthError, User}
 import com.example.utils.Util.foldEitherOfFuture
 import sttp.model.StatusCode
@@ -13,9 +12,13 @@ import sttp.tapir.server.PartialServerEndpoint
 import scala.concurrent.{ExecutionContext, Future}
 
 class TapirSecurity(authentication: TapirAuthentication)(implicit ec: ExecutionContext) {
+
   def tapirSecurityEndpoint(roles: List[String]): PartialServerEndpoint[String, User, Unit, (StatusCode, AuthError), Unit, Any, Future] = endpoint.securityIn(auth.bearer[String]())
     .errorOut(statusCode).errorOut(jsonBody[AuthError])
     .serverSecurityLogic(authentication.authenticate(_).flatMap {
       either => foldEitherOfFuture(either.map(isAuthorized(_, roles))).map(_.flatten)
     })
+
+  def isAuthorized(user: User, roles: List[String]): Future[Either[(StatusCode, AuthError), User]] =
+    Future.successful(if (roles.isEmpty || roles.contains(user.role)) Right(user) else Left((StatusCode.Forbidden, AuthError("user is not allowed to use this endpoint"))))
 }
