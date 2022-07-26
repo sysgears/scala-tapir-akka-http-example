@@ -15,16 +15,16 @@ class OrderProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(
     querySchema[OrderProduct]("order_items")
   }
 
-  def insert(order: OrderProduct): Future[Long] = Future {
-    run(orderItems.insertValue(lift(order)).returningGenerated(_.id))
+  def insert(orderProduct: OrderProduct): Future[Long] = Future {
+    run(orderItems.insertValue(lift(orderProduct)).returningGenerated(_.id))
   }
 
-  def update(order: OrderProduct): Future[Long] = Future {
-    run(orderItems.filter(_.id == lift(order.id)).updateValue(lift(order)))
+  def update(orderProduct: OrderProduct): Future[Long] = Future {
+    run(orderItems.filter(_.id == lift(orderProduct.id)).updateValue(lift(orderProduct)))
   }
 
-  def remove(orderId: Long): Future[Long] = Future {
-    run(orderItems.filter(_.id == lift(orderId)).delete)
+  def remove(orderProductId: Long): Future[Long] = Future {
+    run(orderItems.filter(_.id == lift(orderProductId)).delete)
   }
 
   def findByOrder(orderId: Long): Future[List[OrderProduct]] = Future {

@@ -15,16 +15,16 @@ class ProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(impli
     querySchema[Product]("products")
   }
 
-  def insert(order: Product): Future[Long] = Future {
-    run(products.insertValue(lift(order)).returningGenerated(_.id))
+  def insert(product: Product): Future[Long] = Future {
+    run(products.insertValue(lift(product)).returningGenerated(_.id))
   }
 
-  def update(order: Product): Future[Long] = Future {
-    run(products.filter(_.id == lift(order.id)).updateValue(lift(order)))
+  def update(product: Product): Future[Long] = Future {
+    run(products.filter(_.id == lift(product.id)).updateValue(lift(product)))
   }
 
-  def remove(orderId: Long): Future[Long] = Future {
-    run(products.filter(_.id == lift(orderId)).delete)
+  def remove(productId: Long): Future[Long] = Future {
+    run(products.filter(_.id == lift(productId)).delete)
   }
 
   def findAll(): Future[List[Product]] = Future {
