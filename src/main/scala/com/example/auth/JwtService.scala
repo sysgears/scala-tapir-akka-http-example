@@ -1,4 +1,4 @@
-package com.example.utils
+package com.example.auth
 
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -8,12 +8,12 @@ import java.util.{Date, UUID}
 import com.example.dao.UserDao
 import com.example.models.User
 import com.typesafe.config.Config
-import io.jsonwebtoken.{Claims, Jwt, Jwts, SignatureAlgorithm}
+import io.jsonwebtoken.{Claims, Jwts, SignatureAlgorithm}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class JwtUtils(config: Config, userDao: UserDao) {
+class JwtService(config: Config, userDao: UserDao) {
 
   private val secret = config.getString("jwt.secret")
   private val ttlSeconds = config.getLong("jwt.expiration.seconds")

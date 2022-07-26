@@ -3,11 +3,11 @@ package com.example.controllers
 import java.time.LocalDateTime
 
 import akka.http.scaladsl.server.{Directives, Route}
-import com.example.auth.TapirSecurity
+import com.example.auth.{JwtService, TapirSecurity}
 import com.example.dao.UserDao
 import com.example.models.{Token, User}
 import com.example.models.forms.{SignInForm, SignUpForm}
-import com.example.utils.{CryptUtils, JwtUtils}
+import com.example.utils.CryptUtils
 import sttp.tapir.{endpoint, statusCode}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -17,7 +17,7 @@ import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AuthController(tapirSecurity: TapirSecurity, userDao: UserDao, jwtUtils: JwtUtils)(implicit ec: ExecutionContext) {
+class AuthController(tapirSecurity: TapirSecurity, userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) {
 
   val signInEndpoint: Route = AkkaHttpServerInterpreter().toRoute(endpoint.post
     .in("signIn")
@@ -29,7 +29,7 @@ class AuthController(tapirSecurity: TapirSecurity, userDao: UserDao, jwtUtils: J
       userDao.findByEmail(form.login).map {
         case Some(user) =>
           if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
-            val jwtToken = jwtUtils.generateJwt(user.id)
+            val jwtToken = jwtService.generateJwt(user.id)
             Right(Token(jwtToken))
           } else {
             Left("Login or password is incorrect. Please, try again")
