@@ -1,6 +1,7 @@
 package com.example
 
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Directives
 import com.example.modules.MainModule
 import com.typesafe.scalalogging.LazyLogging
 import sttp.model.StatusCode
@@ -21,7 +22,11 @@ object TapirRoutes extends App with LazyLogging with MainModule {
     /* here we can use both `special` and `input` values */
   })
 
-  val bindingFuture = Http().newServerAt("localhost", 9000).bind(route)
+  val signInRoute = AkkaHttpServerInterpreter().toRoute(authController.signInEndpoint)
+
+  val resultRoute = Directives.concat(route, signInRoute)
+
+  val bindingFuture = Http().newServerAt("localhost", 9000).bind(resultRoute)
   logger.info(s"Server online at http://localhost:9000/")
   logger.info("Press RETURN to stop...")
   StdIn.readLine()
