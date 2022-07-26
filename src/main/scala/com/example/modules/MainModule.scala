@@ -17,9 +17,9 @@ trait MainModule {
   lazy val config: Config = ConfigFactory.load()
   lazy val ctx = new PostgresJdbcContext(SnakeCase, "db.default")
   lazy val userDao = wire[UserDao]
+  lazy val jwtUtils = wire[JwtUtils]
   lazy val authentication = wire[TapirAuthentication]
   lazy val tapirSecurity = wire[TapirSecurity]
-  lazy val jwtUtils = wire[JwtUtils]
   lazy val authController = wire[AuthController]
 
 }
