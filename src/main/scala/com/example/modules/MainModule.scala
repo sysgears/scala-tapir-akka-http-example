@@ -2,7 +2,7 @@ package com.example.modules
 
 import akka.actor.ActorSystem
 import com.example.auth.{JwtService, TapirAuthentication, TapirSecurity}
-import com.example.controllers.AuthController
+import com.example.controllers.{AuthController, OrderController}
 import com.example.dao._
 import com.softwaremill.macwire._
 import com.typesafe.config.{Config, ConfigFactory}
@@ -23,5 +23,6 @@ trait MainModule {
   lazy val authentication   = wire[TapirAuthentication]
   lazy val tapirSecurity    = wire[TapirSecurity]
   lazy val authController   = wire[AuthController]
+  lazy val orderController  = wire[OrderController]
 
 }

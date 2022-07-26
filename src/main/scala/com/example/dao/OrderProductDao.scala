@@ -34,4 +34,8 @@ class OrderProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(
   def removeByOrder(orderId: Long): Future[List[OrderProduct]] = Future {
     run(orderItems.filter(_.orderId == lift(orderId)))
   }
+
+  def insertBatch(orderProductList: List[OrderProduct]): Future[List[Long]] = Future {
+    run(liftQuery(orderProductList).foreach(entry => orderItems.insertValue(entry).returningGenerated(r => r.id)))
+  }
 }
