@@ -10,7 +10,7 @@ import com.example.models.User
 import com.typesafe.config.Config
 import io.jsonwebtoken.{Claims, Jwts, SignatureAlgorithm}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class JwtService(config: Config, userDao: UserDao) {
@@ -31,7 +31,7 @@ class JwtService(config: Config, userDao: UserDao) {
     jwt.compact()
   }
 
-  def extractUserFromJwt(jwt: String): Future[Option[User]] = {
+  def extractUserFromJwt(jwt: String)(implicit ec: ExecutionContext): Future[Either[Throwable, Option[User]]] = {
     val decodedJwtStr =
       URLDecoder.decode(jwt, StandardCharsets.UTF_8.toString)
     Try {
@@ -40,12 +40,12 @@ class JwtService(config: Config, userDao: UserDao) {
         .setSigningKey(secret.getBytes(StandardCharsets.UTF_8.toString))
         .parseClaimsJws(decodedJwtStr)
     } match {
-      case Failure(_) => Future.successful(None)
+      case Failure(exception) => Future.successful(Left(exception))
       case Success(claims) =>
         val jwtClaims: Claims = claims.getBody
         jwtClaims.get("userId").toString.toLongOption match {
-          case Some(userId) => userDao.find(userId)
-          case None => Future.successful(None)
+          case Some(userId) => userDao.find(userId).map(Right(_))
+          case None => Future.successful(Right(None))
         }
     }
   }

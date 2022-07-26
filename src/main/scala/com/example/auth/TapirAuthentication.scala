@@ -10,8 +10,12 @@ class TapirAuthentication(jwtService: JwtService, userDao: UserDao)(implicit ec:
 
   def authenticate(token: String): Future[Either[(StatusCode, AuthError), User]] = {
     jwtService.extractUserFromJwt(token).map {
-      case Some(user) => Right(user)
-      case None => Left((StatusCode.Unauthorized, AuthError("user from token is not found")))
+      case Left(exception) => Left((StatusCode.Unauthorized, AuthError("Token is expired. You need to log in first")))
+      case Right(userOpt) => userOpt match {
+        case Some(user) => Right(user)
+        case None => Left((StatusCode.Unauthorized, AuthError("user from token is not found")))
+      }
+
     }
   }
 }
