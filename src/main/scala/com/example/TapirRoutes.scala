@@ -22,9 +22,7 @@ object TapirRoutes extends App with LazyLogging with MainModule {
     /* here we can use both `special` and `input` values */
   })
 
-  val signInRoute = AkkaHttpServerInterpreter().toRoute(authController.signInEndpoint)
-
-  val resultRoute = Directives.concat(route, signInRoute)
+  val resultRoute = Directives.concat(route, authController.authRoutes)
 
   val bindingFuture = Http().newServerAt("localhost", 9000).bind(resultRoute)
   logger.info(s"Server online at http://localhost:9000/")
