@@ -16,12 +16,6 @@ class TapirSecurity(authentication: TapirAuthentication)(implicit ec: ExecutionC
   def tapirSecurityEndpoint(roles: List[String]): PartialServerEndpoint[String, User, Unit, (StatusCode, AuthError), Unit, Any, Future] = endpoint.securityIn(auth.bearer[String]())
     .errorOut(statusCode).errorOut(jsonBody[AuthError])
     .serverSecurityLogic(authentication.authenticate(_).flatMap {
-      either => foldEitherOfFuture(either.map(isAuthorized(_, roles))).map {
-        case Left(value) => Left(value)
-        case Right(value) => value match {
-          case Left(value) => Left(value)
-          case Right(value) => Right(value)
-        }
-      }
+      either => foldEitherOfFuture(either.map(isAuthorized(_, roles))).map(_.flatten)
     })
 }
