@@ -34,4 +34,8 @@ class ProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(impli
   def findPaginated(take: Int, offset: Int): Future[List[Product]] = Future {
     run(products.drop(lift(offset)).take(lift(take)))
   }
+
+  def findByIds(productIds: Seq[Long]): Future[List[Product]] = Future {
+    run(products.filter(product => liftQuery(productIds).contains(product.id)))
+  }
 }

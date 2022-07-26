@@ -31,6 +31,10 @@ class OrderDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implici
     run(orders.filter(_.id == lift(orderId)).delete)
   }
 
+  def find(orderId: Long): Future[Option[Order]] = Future {
+    run(orders.filter(_.id == lift(orderId))).headOption
+  }
+
   def findForUser(userId: Long): Future[List[Order]] = Future {
     run(orders.filter(_.userId == lift(userId)))
   }

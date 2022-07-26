@@ -4,25 +4,27 @@ import java.time.LocalDateTime
 
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
-import com.example.dao.{OrderDao, OrderProductDao}
-import com.example.models.{AuthError, Order, OrderProduct, Roles}
+import com.example.dao.{OrderDao, OrderProductDao, ProductDao}
+import com.example.models.{AuthError, Order, OrderProduct, OrderRecord, Product, Roles, UserOrder}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
+import sttp.tapir._
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
-import sttp.tapir.statusCode
+import sttp.tapir.{path, statusCode}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class OrderController(tapirSecurity: TapirSecurity,
                       orderDao: OrderDao,
+                      productDao: ProductDao,
                       orderProductDao: OrderProductDao)(implicit ec: ExecutionContext) {
 
   val createOrderEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User))
     .post
-    .in("order")
+    .in("orders")
     .in(jsonBody[CreateOrderForm]
         .description("Contains everything for creating orders")
         .example(CreateOrderForm(List(OrderProductForm(1, 5)), "Some delivery comment")))
@@ -44,6 +46,41 @@ class OrderController(tapirSecurity: TapirSecurity,
 
     })
 
-  val orderRoutes = Directives.concat(createOrderEndpoint)
+  val viewUserOrderListEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User))
+    .get
+    .in("orders")
+    .out(jsonBody[List[Order]]
+      .description("Returns list of orders for the user")
+      .example(List(Order(0, 1, LocalDateTime.now(), "NEW", LocalDateTime.now(), "test comment"))))
+    .serverLogic { user => _ =>
+      orderDao.findForUser(user.id).map(Right(_))
+    }
+  )
+
+  val viewUserOrderEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User))
+    .get
+    .in("orders" / path[Long]("orderId").description("Order's id to retrieve information"))
+    .out(jsonBody[UserOrder].description("Contains order itself with it's entries")
+      .example(UserOrder(Order(0, 1, LocalDateTime.now(), "NEW", LocalDateTime.now(), "test comment"),
+        List(OrderRecord(0, 0, Some(Product(0, "test product", "test description", 0.0)), 5)))))
+    .serverLogic { _ => orderId =>
+      orderDao.find(orderId).flatMap {
+        case Some(order) =>
+          for {
+            orderProducts <- orderProductDao.findByOrder(order.id)
+            products <- productDao.findByIds(orderProducts.map(_.productId).distinct)
+          } yield {
+            val extendedOrderProducts = orderProducts.map { orderProduct =>
+              val product = products.find(_.id == orderProduct.productId)
+              OrderRecord(orderProduct.id, orderProduct.orderId, product, orderProduct.quantity)
+            }
+            Right(UserOrder(order, extendedOrderProducts))
+          }
+        case None => Future.successful(Left(StatusCode.NotFound, AuthError("Order with that id not found")))
+      }
+    }
+  )
+
+  val orderRoutes: Route = Directives.concat(createOrderEndpoint, viewUserOrderListEndpoint, viewUserOrderEndpoint)
 }
 
