@@ -23,7 +23,10 @@ object TapirRoutes extends App with LazyLogging with MainModule {
     /* here we can use both `special` and `input` values */
   })
 
-  val resultRoute = Directives.concat(route, authController.authRoutes, orderController.orderRoutes)
+  val resultRoute = Directives.concat(route,
+    authController.authRoutes,
+    orderController.orderRoutes,
+    adminProductController.adminProductEndpoints)
 
   val bindingFuture = Http().newServerAt("localhost", 9000).bind(resultRoute)
   logger.info(s"Server online at http://localhost:9000/")
