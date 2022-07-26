@@ -1,11 +1,8 @@
 package com.example
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import com.example.auth.{TapirAuthentication, TapirSecurity}
-import com.example.dao.UserDao
+import com.example.modules.MainModule
 import com.typesafe.scalalogging.LazyLogging
-import io.getquill.{PostgresJdbcContext, SnakeCase}
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
@@ -13,17 +10,11 @@ import sttp.tapir._
 import scala.concurrent.Future
 import scala.io.StdIn
 
-object TapirRoutes extends App with LazyLogging {
+object TapirRoutes extends App with LazyLogging with MainModule {
 
-  implicit val actorSystem: ActorSystem = ActorSystem()
   import actorSystem.dispatcher
 
-  lazy val ctx = new PostgresJdbcContext(SnakeCase, "db.default")
-  val userDao = new UserDao(ctx)
-  val authentication = new TapirAuthentication()
-  val tapirSecurity = new TapirSecurity(authentication)
-
-  val tapirEndpoint = tapirSecurity.tapirSecurityEndpoint(List("Admin")).get.in("test").out(stringBody).out(statusCode(StatusCode.Created))
+  val tapirEndpoint = tapirSecurity.tapirSecurityEndpoint(List.empty).get.in("test").out(stringBody).out(statusCode(StatusCode.Created))
 
   val route = AkkaHttpServerInterpreter().toRoute(tapirEndpoint.serverLogic { user => input =>
     Future(Right(s"test ok response with user $user"))

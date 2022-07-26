@@ -15,6 +15,7 @@ val CirceVersion = "0.14.2"
 libraryDependencies ++= Seq(
   "io.getquill" %% "quill-jdbc" % "3.18.0",
   "org.postgresql" % "postgresql" % "42.3.6",
+  "com.softwaremill.macwire" %% "macros" % "2.5.7" % "provided",
   "org.scala-lang.modules" %% "scala-async" % "1.0.1",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
