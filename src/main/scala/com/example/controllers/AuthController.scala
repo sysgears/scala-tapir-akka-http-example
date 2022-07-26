@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.{JwtService, TapirSecurity}
 import com.example.dao.UserDao
-import com.example.models.{Token, User}
+import com.example.models.{Roles, Token, User}
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.utils.CryptUtils
 import sttp.tapir.{endpoint, statusCode}
@@ -58,7 +58,7 @@ class AuthController(tapirSecurity: TapirSecurity, userDao: UserDao, jwtService:
           case None =>
             userDao.createUser(User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
               CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
-              signUpForm.address, "User", LocalDateTime.now)).map { _ =>
+              signUpForm.address, Roles.User, LocalDateTime.now)).map { _ =>
               Right(())
             }
         }

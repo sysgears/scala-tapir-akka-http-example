@@ -4,6 +4,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives
 import com.example.modules.MainModule
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.syntax.EncoderOps
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
