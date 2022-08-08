@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao}
-import com.example.models.{AuthError, Order, OrderProduct, OrderRecord, Product, Roles, UserOrder}
+import com.example.models.{AuthError, Order, OrderProduct, OrderRecord, Product, Roles, OrderWithRecords}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -60,8 +60,8 @@ class OrderController(tapirSecurity: TapirSecurity,
   val viewUserOrderEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User))
     .get
     .in("orders" / path[Long]("orderId").description("Order's id to retrieve information"))
-    .out(jsonBody[UserOrder].description("Contains order itself with it's entries")
-      .example(UserOrder(Order(0, 1, LocalDateTime.now(), "NEW", LocalDateTime.now(), "test comment"),
+    .out(jsonBody[OrderWithRecords].description("Contains order itself with it's entries")
+      .example(OrderWithRecords(Order(0, 1, LocalDateTime.now(), "NEW", LocalDateTime.now(), "test comment"),
         List(OrderRecord(0, 0, Some(Product(0, "test product", "test description", 0.0)), 5)))))
     .serverLogic { _ => orderId =>
       orderDao.find(orderId).flatMap {
@@ -74,7 +74,7 @@ class OrderController(tapirSecurity: TapirSecurity,
               val product = products.find(_.id == orderProduct.productId)
               OrderRecord(orderProduct.id, orderProduct.orderId, product, orderProduct.quantity)
             }
-            Right(UserOrder(order, extendedOrderProducts))
+            Right(OrderWithRecords(order, extendedOrderProducts))
           }
         case None => Future.successful(Left(StatusCode.NotFound, AuthError("Order with that id not found")))
       }

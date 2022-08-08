@@ -1,3 +1,3 @@
 package com.example.models
 
-case class UserOrder(order: Order, orderRecords: List[OrderRecord])
+case class UserOrder(user: Option[ShortUser], order: OrderWithRecords)
