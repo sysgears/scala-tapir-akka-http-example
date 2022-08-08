@@ -70,5 +70,19 @@ class AdminOrderController(tapirSecurity: TapirSecurity,
     }
   )
 
-  val adminOrderEndpoints: Route = Directives.concat(adminOrdersView, changeOrderStatusEndpoint)
+  val deleteOrderEndpoint = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+    .delete
+    .description("Removes order")
+    .in("admin" / "orders").in(path[Long]("orderId"))
+    .out(statusCode(StatusCode.NoContent))
+    .serverLogic { _ => orderId =>
+      orderDao.remove(orderId).map {
+        case 0 => Left((StatusCode.NotFound, AuthError(s"Order $orderId not found")))
+        case x if x > 0 => Right(())
+        case _ => Left((StatusCode.InternalServerError, AuthError("Unknown error, got less 0 result")))
+      }
+    }
+  )
+
+  val adminOrderEndpoints: Route = Directives.concat(adminOrdersView, changeOrderStatusEndpoint, deleteOrderEndpoint)
 }
