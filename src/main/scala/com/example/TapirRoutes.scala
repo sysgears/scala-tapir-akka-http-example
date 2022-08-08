@@ -26,6 +26,7 @@ object TapirRoutes extends App with LazyLogging with MainModule {
   val resultRoute = Directives.concat(route,
     authController.authRoutes,
     orderController.orderRoutes,
+    productController.productEndpoints,
     adminProductController.adminProductEndpoints,
     adminOrderController.adminOrderEndpoints)
 

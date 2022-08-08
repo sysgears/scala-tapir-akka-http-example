@@ -25,6 +25,7 @@ trait MainModule {
   lazy val tapirSecurity    = wire[TapirSecurity]
   lazy val authController   = wire[AuthController]
   lazy val orderController  = wire[OrderController]
+  lazy val productController  = wire[ProductController]
   lazy val adminProductController = wire[AdminProductController]
   lazy val adminOrderController = wire[AdminOrderController]
 

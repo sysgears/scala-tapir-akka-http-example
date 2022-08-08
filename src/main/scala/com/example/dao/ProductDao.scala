@@ -35,6 +35,10 @@ class ProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(impli
     run(products.drop(lift(offset)).take(lift(take)))
   }
 
+  def countProducts(): Future[Long] = Future {
+    run(products.size)
+  }
+
   def findByIds(productIds: Seq[Long]): Future[List[Product]] = Future {
     run(products.filter(product => liftQuery(productIds).contains(product.id)))
   }
