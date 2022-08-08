@@ -3,8 +3,8 @@ package com.example.controllers.admin
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao, UserDao}
-import com.example.models.{AdminOrderViewResponse, AuthError, OrderRecord, OrderWithRecords, PaginationMetadata, Roles, ShortUser, UserOrder}
-import com.example.models.forms.AdminViewPageArguments
+import com.example.models.{AdminOrderViewResponse, AuthError, Order, OrderRecord, OrderWithRecords, PaginationMetadata, Roles, ShortUser, UserOrder}
+import com.example.models.forms.{AdminOrderStatusChangeArguments, AdminViewPageArguments}
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -56,5 +56,19 @@ class AdminOrderController(tapirSecurity: TapirSecurity,
     }
   )
 
-  val adminOrderEndpoints: Route = Directives.concat(adminOrdersView)
+  val changeOrderStatusEndpoint = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+    .put
+    .description("Updates order's status. Can change to unprocessed, processed or complete")
+    .in(EndpointInput.derived[AdminOrderStatusChangeArguments])
+    .out(jsonBody[String].description("Success message"))
+    .serverLogic { _ => args =>
+      if (Order.appropriateStatuses.contains(args.newStatus.toLowerCase())) {
+        orderDao.updateStatus(args.orderId, args.newStatus.toLowerCase()).map(_ => Right("Updated!"))
+      } else {
+        Future.successful(Left((StatusCode.BadRequest, AuthError("Invalid new status!"))))
+      }
+    }
+  )
+
+  val adminOrderEndpoints: Route = Directives.concat(adminOrdersView, changeOrderStatusEndpoint)
 }
