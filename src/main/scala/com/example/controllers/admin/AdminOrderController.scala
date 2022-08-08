@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao, UserDao}
 import com.example.models.{AdminOrderViewResponse, AuthError, Order, OrderRecord, OrderWithRecords, PaginationMetadata, Roles, ShortUser, UserOrder}
-import com.example.models.forms.{AdminOrderStatusChangeArguments, AdminViewPageArguments}
+import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -24,7 +24,7 @@ class AdminOrderController(tapirSecurity: TapirSecurity,
     .get
     .description("Showing paginated orders for admin with opportunity to sort by some parameters")
     .in("admin" / "orders")
-    .in(EndpointInput.derived[AdminViewPageArguments])
+    .in(EndpointInput.derived[PaginatedEndpointArguments])
     .out(jsonBody[AdminOrderViewResponse].description("Paginated list of orders, zipped with user, who made this order"))
     .serverLogic { _ => args =>
       if (args.page < 1 || args.pageSize < 1) {
