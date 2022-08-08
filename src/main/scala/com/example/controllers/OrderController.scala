@@ -61,7 +61,7 @@ class OrderController(tapirSecurity: TapirSecurity,
     .get
     .in("orders" / path[Long]("orderId").description("Order's id to retrieve information"))
     .out(jsonBody[OrderWithRecords].description("Contains order itself with it's entries")
-      .example(OrderWithRecords(Order(0, 1, LocalDateTime.now(), "NEW", LocalDateTime.now(), "test comment"),
+      .example(OrderWithRecords(Order(0, 1, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "test comment"),
         List(OrderRecord(0, 0, Some(Product(0, "test product", "test description", 0.0)), 5)))))
     .serverLogic { _ => orderId =>
       orderDao.find(orderId).flatMap {
