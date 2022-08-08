@@ -39,4 +39,8 @@ class UserDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit
   def findByEmail(email: String): Future[Option[User]] = Future {
     run(users.filter(_.email == lift(email))).headOption
   }
+
+  def findByIds(userIds: Seq[Long]): Future[List[User]] = Future {
+    run(users.filter(user => liftQuery(userIds).contains(user.id)))
+  }
 }

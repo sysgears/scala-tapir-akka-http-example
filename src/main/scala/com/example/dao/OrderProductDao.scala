@@ -27,6 +27,10 @@ class OrderProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(
     run(orderItems.filter(_.id == lift(orderProductId)).delete)
   }
 
+  def findByOrders(orderIds: Seq[Long]): Future[List[OrderProduct]] = Future {
+    run(orderItems.filter(orderItem => liftQuery(orderIds).contains(orderItem.orderId)))
+  }
+
   def findByOrder(orderId: Long): Future[List[OrderProduct]] = Future {
     run(orderItems.filter(_.orderId == lift(orderId)))
   }

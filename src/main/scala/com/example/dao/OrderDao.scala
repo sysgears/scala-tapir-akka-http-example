@@ -43,4 +43,8 @@ class OrderDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implici
     run(orders.drop(lift(offset)).take(lift(take)))
   }
 
+  def countOrders(): Future[Long] = Future {
+    run(orders.size)
+  }
+
 }
