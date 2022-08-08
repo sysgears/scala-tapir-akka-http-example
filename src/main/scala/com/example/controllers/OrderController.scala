@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao}
-import com.example.models.{AuthError, Order, OrderProduct, OrderRecord, Product, Roles, OrderWithRecords}
+import com.example.models.{ErrorMessage, Order, OrderProduct, OrderRecord, Product, Roles, OrderWithRecords}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -41,7 +41,7 @@ class OrderController(tapirSecurity: TapirSecurity,
           Right()
         }
       } else {
-        Future.successful(Left(StatusCode.BadRequest, AuthError("Some order record contains invalid value!")))
+        Future.successful(Left(StatusCode.BadRequest, ErrorMessage("Some order record contains invalid value!")))
       }
 
     })
@@ -76,7 +76,7 @@ class OrderController(tapirSecurity: TapirSecurity,
             }
             Right(OrderWithRecords(order, extendedOrderProducts))
           }
-        case None => Future.successful(Left(StatusCode.NotFound, AuthError("Order with that id not found")))
+        case None => Future.successful(Left(StatusCode.NotFound, ErrorMessage("Order with that id not found")))
       }
     }
   )

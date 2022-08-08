@@ -3,7 +3,7 @@ package com.example.controllers.admin
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao, UserDao}
-import com.example.models.{AdminOrderViewResponse, AuthError, Order, OrderRecord, OrderWithRecords, PaginationMetadata, Roles, ShortUser, UserOrder}
+import com.example.models.{AdminOrderViewResponse, ErrorMessage, Order, OrderRecord, OrderWithRecords, PaginationMetadata, Roles, ShortUser, UserOrder}
 import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
@@ -28,7 +28,7 @@ class AdminOrderController(tapirSecurity: TapirSecurity,
     .out(jsonBody[AdminOrderViewResponse].description("Paginated list of orders, zipped with user, who made this order"))
     .serverLogic { _ => args =>
       if (args.page < 1 || args.pageSize < 1) {
-        Future.successful(Left((StatusCode.BadRequest, AuthError("Page arguments are invalid!"))))
+        Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Page arguments are invalid!"))))
       } else {
         val offset = (args.page - 1) * args.pageSize
         val findPaginatedFuture = orderDao.findPaginated(args.pageSize, offset)
@@ -65,7 +65,7 @@ class AdminOrderController(tapirSecurity: TapirSecurity,
       if (Order.appropriateStatuses.contains(args.newStatus.toLowerCase())) {
         orderDao.updateStatus(args.orderId, args.newStatus.toLowerCase()).map(_ => Right("Updated!"))
       } else {
-        Future.successful(Left((StatusCode.BadRequest, AuthError("Invalid new status!"))))
+        Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Invalid new status!"))))
       }
     }
   )
@@ -77,9 +77,9 @@ class AdminOrderController(tapirSecurity: TapirSecurity,
     .out(statusCode(StatusCode.NoContent))
     .serverLogic { _ => orderId =>
       orderDao.remove(orderId).map {
-        case 0 => Left((StatusCode.NotFound, AuthError(s"Order $orderId not found")))
+        case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Order $orderId not found")))
         case x if x > 0 => Right(())
-        case _ => Left((StatusCode.InternalServerError, AuthError("Unknown error, got less 0 result")))
+        case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result")))
       }
     }
   )

@@ -3,7 +3,7 @@ package com.example.controllers
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.ProductDao
-import com.example.models.{AuthError, PaginatedProductListViewResponse, PaginationMetadata, Roles}
+import com.example.models.{ErrorMessage, PaginatedProductListViewResponse, PaginationMetadata, Roles}
 import com.example.models.forms.PaginatedEndpointArguments
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
@@ -25,7 +25,7 @@ class ProductController(tapirSecurity: TapirSecurity,
     .out(jsonBody[PaginatedProductListViewResponse].description("Contains pagination metadata and "))
     .serverLogic { _ => args =>
       if (args.page < 1 || args.pageSize < 1) {
-        Future.successful(Left((StatusCode.BadRequest, AuthError("Page arguments are invalid!"))))
+        Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Page arguments are invalid!"))))
       } else {
         val offset = (args.page - 1) * args.pageSize
         val findPaginatedFuture = productDao.findPaginated(args.pageSize, offset)

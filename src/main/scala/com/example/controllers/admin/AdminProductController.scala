@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
 import com.example.dao.ProductDao
 import com.example.models.forms.NewProductForm
-import com.example.models.{AuthError, Product, Roles}
+import com.example.models.{ErrorMessage, Product, Roles}
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -47,9 +47,9 @@ class AdminProductController(tapirSecurity: TapirSecurity,
     .serverLogic { _ => args =>
       val product = args._2
       productDao.update(product).map {
-        case 0 => Left((StatusCode.NotFound, AuthError(s"Product ${product.id} not found")))
+        case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Product ${product.id} not found")))
         case x if x > 0 => Right("Updated!")
-        case _ => Left((StatusCode.InternalServerError, AuthError("Unknown error, got less 0 result")))
+        case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result")))
       }
     }
   )
@@ -61,9 +61,9 @@ class AdminProductController(tapirSecurity: TapirSecurity,
     .out(statusCode(StatusCode.NoContent).description("Returns no content for delete endpoint"))
     .serverLogic { _ => productId =>
       productDao.remove(productId).map {
-        case 0 => Left((StatusCode.NotFound, AuthError(s"Product $productId not found")))
+        case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Product $productId not found")))
         case x if x > 0 => Right(())
-        case _ => Left((StatusCode.InternalServerError, AuthError("Unknown error, got less 0 result")))
+        case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result")))
       }
     }
   )
