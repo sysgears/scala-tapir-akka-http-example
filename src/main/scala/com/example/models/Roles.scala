@@ -4,6 +4,7 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.Try
 
+/** User roles. */
 object Roles extends Enumeration {
   type RoleType = Value
 
