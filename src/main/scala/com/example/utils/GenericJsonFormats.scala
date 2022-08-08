@@ -7,6 +7,9 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.Try
 
+/**
+ * Contains circe formatters for dates.
+ */
 object GenericJsonFormats {
 
   val formatter = new DateTimeFormatterBuilder().append(DateTimeFormatter.ISO_LOCAL_DATE)

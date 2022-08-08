@@ -9,12 +9,17 @@ import com.softwaremill.macwire._
 import com.typesafe.config.{Config, ConfigFactory}
 import io.getquill.{PostgresJdbcContext, SnakeCase}
 
+/**
+ * Macwire module.
+ *
+ * Contains all classes for application's work.
+ */
 trait MainModule {
 
   implicit val actorSystem: ActorSystem = ActorSystem()
   import actorSystem.dispatcher
 
-  lazy val config: Config = ConfigFactory.load()
+  lazy val config: Config = ConfigFactory.load() // for macwire not necessary to wire everything, having required component in scope is enough.
   lazy val ctx = new PostgresJdbcContext(SnakeCase, "db.default")
   lazy val userDao          = wire[UserDao]
   lazy val orderDao         = wire[OrderDao]
