@@ -13,21 +13,34 @@ import scala.concurrent.Future
 import scala.io.StdIn
 
 /**
- * Application's start point.
+ * Application's init point.
  *
- * Extends main module, which contains all wirings and starts the server
+ * Extends main module, which contains all wirings and starts the server. Also contains test route for first example.
  */
 class TapirRoutes extends LazyLogging with MainModule {
 
+  // mostly for execution context
   import actorSystem.dispatcher
 
-  val tapirEndpoint = tapirSecurity.tapirSecurityEndpoint(List.empty).get.in("test").out(stringBody).out(statusCode(StatusCode.Created))
+  /*
+    test tapir endpoint. This endpoint continues security endpoint.
+  */
+  val tapirEndpoint = tapirSecurity
+    .tapirSecurityEndpoint(List.empty) // no rule restriction (authorization)
+    .get // http type
+    .description("test endpoint") // endpoint's description
+    .in("test".description("endpoint path")) // description for uri path
+    .out(stringBody.description("type of response")) // This endpoint will return string body. Also, description for body
+    .out(statusCode(StatusCode.Created).description("Specifies response status code for success case")) // Description for result status code
 
-  val route: Route = AkkaHttpServerInterpreter().toRoute(tapirEndpoint.serverLogic { user =>input =>
-    Future(Right(s"test ok response with user $user"))
-    /* here we can use both `special` and `input` values */
+  val route: Route = AkkaHttpServerInterpreter().toRoute(tapirEndpoint.serverLogic { user => _ =>
+    // first argument from security, second from endpoint specification (described in 'in' functions)
+    Future(Right(s"test ok response with user $user")) // response in Right for success, left for error
   })
 
+  /**
+   * Result route. Contains all active endpoints and this route will be bound to the server.
+   */
   val resultRoute: Route = Directives.concat(route,
     authController.authRoutes,
     orderController.orderRoutes,
@@ -35,6 +48,9 @@ class TapirRoutes extends LazyLogging with MainModule {
     adminProductController.adminProductEndpoints,
     adminOrderController.adminOrderEndpoints)
 
+  /**
+   * Starts server using route above.
+   */
   def init(): Unit = {
     val bindingFuture = Http().newServerAt("localhost", 9000).bind(resultRoute)
     logger.info(s"Server online at http://localhost:9000/")
