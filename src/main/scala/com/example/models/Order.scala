@@ -4,6 +4,9 @@ import java.time.LocalDateTime
 
 case class Order(id: Long, userId: Long, created: LocalDateTime, status: String, lastUpdate: LocalDateTime, comment: String)
 
+/**
+ * Contains appropriate statuses for orders.
+ */
 object Order {
   final val NEW_STATUS = "new"
   final val UNPROCESSED_STATUS = "unprocessed"

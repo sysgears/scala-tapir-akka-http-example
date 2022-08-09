@@ -29,7 +29,7 @@ class TapirRoutes extends LazyLogging with MainModule {
     .tapirSecurityEndpoint(List.empty) // no rule restriction (authorization)
     .get // http type
     .description("test endpoint") // endpoint's description
-    .in("test".description("endpoint path")) // description for uri path
+    .in("test".description("endpoint path")) // description for uri path, /test uri
     .out(stringBody.description("type of response")) // This endpoint will return string body. Also, description for body
     .out(statusCode(StatusCode.Created).description("Specifies response status code for success case")) // Description for result status code
 
