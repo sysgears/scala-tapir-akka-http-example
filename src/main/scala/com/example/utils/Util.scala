@@ -17,4 +17,12 @@ object Util {
       case Left(s) => Future.successful(Left(s))
       case Right(f) => f.map(Right(_))
     }
+
+  /** Email regex. Taken from Play forms. */
+  private val emailRegex = """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
+
+  /** Validates text on email format. */
+  def isTextEmail(text: String): Boolean = {
+    emailRegex.matches(text)
+  }
 }

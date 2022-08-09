@@ -7,7 +7,7 @@ import com.example.auth.JwtService
 import com.example.dao.UserDao
 import com.example.models.{Roles, Token, User}
 import com.example.models.forms.{SignInForm, SignUpForm}
-import com.example.utils.CryptUtils
+import com.example.utils.{CryptUtils, Util}
 import sttp.tapir.{endpoint, statusCode}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -63,21 +63,20 @@ class AuthController(userDao: UserDao, jwtService: JwtService)(implicit ec: Exec
     // defined dynamic status code for error response.
     .errorOut(jsonBody[String].description("Contains reason of response")) // defining response type for error response.
     .serverLogic { signUpForm => // defined logic for the endpoint.
-      if (!signUpForm.password.equals(signUpForm.repeatPassword)) {
-        Future.successful(Left(StatusCode.BadRequest, "Passwords not matches!"))
-      } else if (signUpForm.password.length < 6) {
-        Future.successful(Left(StatusCode.BadRequest, "Password is too short!"))
-      } else {
-        userDao.findByEmail(signUpForm.email).flatMap {
-          case Some(_) =>
-            Future.successful(Left(StatusCode.Conflict, "User with this email is already exists"))
-          case None =>
-            userDao.createUser(User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
-              CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
-              signUpForm.address, Roles.User, LocalDateTime.now)).map { _ =>
-              Right(())
-            }
-        }
+      val isValid = signUpForm.isValid // sign up form validation
+      isValid match {
+        case Left(message) => Future.successful(Left(StatusCode.BadRequest, message))
+        case Right(_) =>
+          userDao.findByEmail(signUpForm.email).flatMap {
+            case Some(_) =>
+              Future.successful(Left(StatusCode.Conflict, "User with this email is already exists"))
+            case None =>
+              userDao.createUser(User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
+                CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
+                signUpForm.address, Roles.User, LocalDateTime.now)).map { _ =>
+                Right(())
+              }
+          }
       }
     })
 

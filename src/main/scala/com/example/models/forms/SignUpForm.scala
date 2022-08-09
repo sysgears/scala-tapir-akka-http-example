@@ -1,7 +1,10 @@
 package com.example.models.forms
 
+import com.example.utils.Util
+
 /**
  * Sign up request body format
+ *
  * @param name new user's name
  * @param phoneNumber new user's phone number
  * @param email new user's email. Email has to be unique and not be present in database.
@@ -18,4 +21,15 @@ case class SignUpForm(name: String,
                       city: String,
                       address: String,
                       password: String,
-                      repeatPassword: String)
+                      repeatPassword: String) {
+
+  def isValid: Either[String, Unit] = {
+    if (!Util.isTextEmail(email)) {
+      Left("Invalid email format")
+    } else if (!password.equals(repeatPassword)) {
+      Left("Passwords not matches!")
+    } else if (password.length < 6) {
+      Left("Password is too short!")
+    } else Right(())
+  }
+}
