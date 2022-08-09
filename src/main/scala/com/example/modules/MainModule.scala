@@ -6,6 +6,7 @@ import com.example.controllers.admin._
 import com.example.controllers._
 import com.example.dao._
 import com.example.services._
+import com.example.services.admin._
 import com.softwaremill.macwire._
 import com.typesafe.config.{Config, ConfigFactory}
 import io.getquill.{PostgresJdbcContext, SnakeCase}
@@ -32,6 +33,8 @@ trait MainModule {
   lazy val authService      = wire[AuthService]
   lazy val orderService     = wire[OrderService]
   lazy val productService   = wire[ProductService]
+  lazy val adminOrderService= wire[AdminOrderService]
+  lazy val adminProductService = wire[AdminProductService]
   lazy val authController   = wire[AuthController]
   lazy val orderController  = wire[OrderController]
   lazy val productController  = wire[ProductController]
