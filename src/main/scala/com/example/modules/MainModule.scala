@@ -5,6 +5,7 @@ import com.example.auth.{JwtService, TapirAuthentication, TapirSecurity}
 import com.example.controllers.admin._
 import com.example.controllers._
 import com.example.dao._
+import com.example.services._
 import com.softwaremill.macwire._
 import com.typesafe.config.{Config, ConfigFactory}
 import io.getquill.{PostgresJdbcContext, SnakeCase}
@@ -28,6 +29,9 @@ trait MainModule {
   lazy val jwtService       = wire[JwtService]
   lazy val authentication   = wire[TapirAuthentication]
   lazy val tapirSecurity    = wire[TapirSecurity]
+  lazy val authService      = wire[AuthService]
+  lazy val orderService     = wire[OrderService]
+  lazy val productService   = wire[ProductService]
   lazy val authController   = wire[AuthController]
   lazy val orderController  = wire[OrderController]
   lazy val productController  = wire[ProductController]

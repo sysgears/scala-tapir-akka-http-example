@@ -2,9 +2,9 @@ package com.example.controllers
 
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
-import com.example.dao.ProductDao
-import com.example.models.{ErrorMessage, PaginatedProductListViewResponse, PaginationMetadata, Roles}
+import com.example.models.{ErrorMessage, PaginatedProductListViewResponse, Roles}
 import com.example.models.forms.PaginatedEndpointArguments
+import com.example.services.ProductService
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -17,16 +17,15 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * Contains endpoints, related to products and available for user
  * @param tapirSecurity security endpoint
- * @param productDao dao for products
+ * @param productService service for the controller.
  * @param ec for futures.
  */
-class ProductController(tapirSecurity: TapirSecurity,
-                        productDao: ProductDao)(implicit ec: ExecutionContext) {
+class ProductController(tapirSecurity: TapirSecurity, productService: ProductService)(implicit ec: ExecutionContext) {
 
   /**
    * Retrieves paginated list of products.
    */
-  val paginatedProductListEndpoint = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // restricted, only for users
+  val paginatedProductListEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // restricted, only for users
     .get // GET endpoint
     .description("Shows paginated list of products for user") // endpoint description
     .in("products") // /products uri
@@ -36,17 +35,7 @@ class ProductController(tapirSecurity: TapirSecurity,
       if (args.page < 1 || args.pageSize < 1) { // page arguments validation, we don't want negative offset or page size
         Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Page arguments are invalid!"))))
       } else {
-        val offset = (args.page - 1) * args.pageSize
-        val findPaginatedFuture = productDao.findPaginated(args.pageSize, offset)
-        val countProductsFuture = productDao.countProducts()
-        for {
-          products <- findPaginatedFuture
-          productsCount <- countProductsFuture
-        } yield {
-          val pages = (productsCount.toDouble / args.pageSize.toDouble).ceil.toInt
-          val metadata = PaginationMetadata(args.page, args.pageSize, pages, productsCount)
-          Right(PaginatedProductListViewResponse(metadata, products))
-        }
+        productService.extractPaginatedProducts(args).map(Right(_))
       }
     }
   )

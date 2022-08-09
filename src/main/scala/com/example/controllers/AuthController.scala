@@ -1,13 +1,9 @@
 package com.example.controllers
 
-import java.time.LocalDateTime
-
 import akka.http.scaladsl.server.{Directives, Route}
-import com.example.auth.JwtService
-import com.example.dao.UserDao
-import com.example.models.{Roles, Token, User}
+import com.example.models.Token
 import com.example.models.forms.{SignInForm, SignUpForm}
-import com.example.utils.{CryptUtils, Util}
+import com.example.services.AuthService
 import sttp.tapir.{endpoint, statusCode}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -15,16 +11,15 @@ import io.circe.generic.auto._
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 /**
  * Controller, which contains auth functions - sign in and sign up.
  *
- * @param userDao user dao
- * @param jwtService jwt service
+ * @param authService service for the controller.
  * @param ec for futures.
  */
-class AuthController(userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) {
+class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
 
   /**
    * Sign in endpoint defining.
@@ -37,16 +32,7 @@ class AuthController(userDao: UserDao, jwtService: JwtService)(implicit ec: Exec
     .out(jsonBody[Token].description("Bearer token for authorization header").example(Token("Bearer lkngla2pj45ij3oijma2oij..."))) // described response
     .errorOut(jsonBody[String]) // described error response type, will return string as json with http 400 code
     .serverLogic { form => // defining logic for the endpoint.
-      userDao.findByEmail(form.login).map {
-        case Some(user) =>
-          if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
-            val jwtToken = jwtService.generateJwt(user.id)
-            Right(Token(jwtToken))
-          } else {
-            Left("Login or password is incorrect. Please, try again")
-          }
-        case None => Left("Login or password is incorrect. Please, try again")
-      }
+      authService.signIn(form)
     })
 
   /**
@@ -63,21 +49,7 @@ class AuthController(userDao: UserDao, jwtService: JwtService)(implicit ec: Exec
     // defined dynamic status code for error response.
     .errorOut(jsonBody[String].description("Contains reason of response")) // defining response type for error response.
     .serverLogic { signUpForm => // defined logic for the endpoint.
-      val isValid = signUpForm.isValid // sign up form validation
-      isValid match {
-        case Left(message) => Future.successful(Left(StatusCode.BadRequest, message))
-        case Right(_) =>
-          userDao.findByEmail(signUpForm.email).flatMap {
-            case Some(_) =>
-              Future.successful(Left(StatusCode.Conflict, "User with this email is already exists"))
-            case None =>
-              userDao.createUser(User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
-                CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
-                signUpForm.address, Roles.User, LocalDateTime.now)).map { _ =>
-                Right(())
-              }
-          }
-      }
+      authService.signUp(signUpForm)
     })
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
