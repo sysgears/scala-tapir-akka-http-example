@@ -8,12 +8,12 @@ lazy val root = (project in file("."))
   )
 
 val AkkaHttpVersion = "10.2.9"
-val TapirVersion = "1.0.1"
-val SttpVersion = "3.7.1"
+val TapirVersion = "1.0.3"
+val SttpVersion = "3.7.2"
 val CirceVersion = "0.14.2"
 
 libraryDependencies ++= Seq(
-  "io.getquill" %% "quill-jdbc" % "3.18.0",
+  "io.getquill" %% "quill-jdbc" % "4.2.0",
   "org.postgresql" % "postgresql" % "42.3.6",
   "com.softwaremill.macwire" %% "macros" % "2.5.7" % "provided",
   "io.jsonwebtoken" % "jjwt" % "0.9.1",
@@ -33,5 +33,5 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "circe" % SttpVersion,
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "ch.qos.logback" % "logback-classic" % "1.2.11",
-  "org.apache.logging.log4j" % "log4j-core" % "2.17.2"
+  "org.apache.logging.log4j" % "log4j-core" % "2.18.0"
 )
