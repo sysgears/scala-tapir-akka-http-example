@@ -47,9 +47,12 @@ class TapirRoutes extends LazyLogging with MainModule {
   /**
    * Result route. Contains all active endpoints and this route will be bound to the server.
    */
-  val resultRoute: Route = Directives.concat(AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(swaggerEndpoints),
-    AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpointList),
-    AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(errorHandler.prometheusMetrics.metricsEndpoint))
+  val resultRoute: Route =
+    timeTracker.aroundRequest(timeTracker.timeRequest) {
+      Directives.concat(AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(swaggerEndpoints),
+        AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpointList),
+        AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(errorHandler.prometheusMetrics.metricsEndpoint))
+    }
 
   /**
    * Starts server using route above.

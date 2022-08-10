@@ -8,6 +8,7 @@ import com.example.dao._
 import com.example.errors.ErrorHandler
 import com.example.services._
 import com.example.services.admin._
+import com.example.utils.RequestTimeTracker
 import com.softwaremill.macwire._
 import com.typesafe.config.{Config, ConfigFactory}
 import io.getquill.{PostgresJdbcContext, SnakeCase}
@@ -26,6 +27,7 @@ trait MainModule {
   lazy val ctx = new PostgresJdbcContext(SnakeCase, "db.default")
   lazy val userDao          = wire[UserDao]
   lazy val errorHandler     = wire[ErrorHandler]
+  lazy val timeTracker      = wire[RequestTimeTracker]
   lazy val orderDao         = wire[OrderDao]
   lazy val productDao       = wire[ProductDao]
   lazy val orderProductDao  = wire[OrderProductDao]
