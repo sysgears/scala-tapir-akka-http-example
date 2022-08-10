@@ -26,6 +26,7 @@ class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
   val signInEndpoint = endpoint
     .post // POST endpoint
     .in("signIn") // /signIn uri
+    .description("Sign in endpoint.")
     .in(jsonBody[SignInForm] // requires signInForm in request body, added description and example.
           .description("Required data to log in").example(SignInForm("test@example.com", "pass4567")))
     .out(jsonBody[Token].description("Bearer token for authorization header").example(Token("Bearer lkngla2pj45ij3oijma2oij..."))) // described response
@@ -40,6 +41,7 @@ class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
   val signUpEndpoint = endpoint
     .post // POST endpoint
     .in("signUp") // /signUp defining.
+    .description("Sign up endpoint.")
     .in(jsonBody[SignUpForm] // requires signUpForm in request body, added description and example.
           .description("Required data to sign up")
           .example(SignUpForm("test name", "+77777777777", "test@example.com", "49050", "Dnipro", "test address, 46", "pass456", "pass456")))

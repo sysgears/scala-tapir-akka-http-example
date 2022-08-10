@@ -31,8 +31,9 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
   val createOrderEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .post // POST endpoint
     .in("orders") // /orders uri
+    .description("Creates order for the user")
     .in(jsonBody[CreateOrderForm] // request has to have body of CreateOrderForm
-        .description("Contains everything for creating orders")
+        .description("Contains everything for creating order")
         .example(CreateOrderForm(List(OrderProductForm(1, 5)), "Some delivery comment")))
     .out(statusCode(StatusCode.Created).description("Returns Created when order is created")) // set static status code for success response
     .serverLogic { user => newOrder => // security output => endpoint input => server logic
@@ -49,7 +50,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
     .description("Extracts orders for the user")
     .in("orders") // /orders uri
     .out(jsonBody[List[Order]] // defining response json format
-      .description("Returns list of orders for the user")
+      .description("List of orders for the user")
       .example(List(Order(0, 1, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "test comment"))))
     .serverLogic { user => _ => // endpoint logic definition
       orderService.findOrdersForUser(user.id).map(Right(_))
@@ -58,6 +59,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
   /** get order details endpoint definition */
   val viewUserOrderEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .get // GET endpoint
+    .description("Retrieves order details.")
     .in("orders" / path[Long]("orderId").description("Order's id to retrieve information")) // /orders/:orderId uri
     .out(jsonBody[OrderWithRecords].description("Contains order itself with it's entries") // set response json format
       .example(OrderWithRecords(Order(0, 1, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "test comment"),
