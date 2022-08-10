@@ -5,8 +5,15 @@
 Task - create service, similar to some kind of shop using Tapir with 
 Akka-Http interpreter, Quill, Macwire and circe json.
 
-This example contains simple authentication and authorization using jwt tokens and Tapir security, sign in, sign up and
-separate endpoints for users and for admins.
+This example contains:
+
+- work with database using Quill 
+- Simple jwt authentication and role authorization to access some endpoints
+- sign in and sign out endpoints
+- error handling customization
+- failed decoding customization
+- request wrappers (request handling time tracker)
+- adding prometheus metrics
 
 Also example contains Quill as library which works with database, similar to Slick and Macwire, which works similar to Guice.
 
