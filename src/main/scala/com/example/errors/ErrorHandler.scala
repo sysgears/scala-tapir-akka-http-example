@@ -16,10 +16,20 @@ import sttp.tapir.server.model.ValuedEndpointOutput
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
+/**
+ * Contains error handler interceptors with additional interceptors
+ * @param ec for futures
+ */
 class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
+
+  /** Prometheus metrics interceptor. */
   val prometheusMetrics = PrometheusMetrics.default[Future]()
 
+  /**
+   * Configuration for AkkaHttpServer routes.
+   *
+   * Contains customization for decode failure handler, exception handler and applied metrics interceptor
+   */
   implicit val customServerOptions: AkkaHttpServerOptions = AkkaHttpServerOptions.customiseInterceptors
     .decodeFailureHandler(ctx => {
       ctx.failingInput match {
@@ -35,7 +45,7 @@ class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
       }
     })
     .exceptionHandler(ExceptionHandler[Future] { ctx =>
-      val exceptionId = UUID.randomUUID()
+      val exceptionId = UUID.randomUUID() // defining exception id for the exception to make search in logs easier.
       logger.error(s"Intercepted exception ${ctx.e} while processing request, exception id: $exceptionId")
       Future.successful(Some(ValuedEndpointOutput[ErrorMessage](jsonBody[ErrorMessage], ErrorMessage(s"Internal Server Error, exception id: $exceptionId"))))
     })
