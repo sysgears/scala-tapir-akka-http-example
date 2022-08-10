@@ -3,7 +3,8 @@ package com.example.controllers
 import java.time.LocalDateTime
 
 import com.example.auth.TapirSecurity
-import com.example.models.{ErrorMessage, Order, OrderRecord, OrderWithRecords, Product, Roles}
+import com.example.errors.BadRequest
+import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.services.OrderService
 import sttp.tapir.generic.auto._
@@ -38,7 +39,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
       if (newOrder.products.forall(product => product.quantity > 0 && product.productId > 0)) {
         orderService.createOrder(user.id, newOrder).map(_ => Right(()))
       } else {
-        Future.successful(Left(StatusCode.BadRequest, ErrorMessage("Some order record contains invalid value!")))
+        Future.successful(Left(BadRequest("Some order record contains invalid value!")))
       }
     }
 
@@ -64,7 +65,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
     .serverLogic { _ => orderId => // endpoint logic definition.
       orderService.getOrderDetails(orderId).map {
         case Some(orderWithRecords) => Right(orderWithRecords)
-        case None => Left(StatusCode.NotFound, ErrorMessage("Order with that id not found"))
+        case None => Left(BadRequest("Order with that id not found"))
       }
     }
 

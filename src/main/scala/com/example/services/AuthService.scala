@@ -4,10 +4,10 @@ import java.time.LocalDateTime
 
 import com.example.auth.JwtService
 import com.example.dao.UserDao
+import com.example.errors.{BadRequest, Conflict, ErrorInfo, ErrorMessage}
 import com.example.models.{Roles, Token, User}
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.utils.CryptUtils
-import sttp.model.StatusCode
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,18 +25,18 @@ class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: Executi
   /**
    * Signs in user.
    * @param form contains login and password for sign in.
-   * @return either string with error message or token class with jwt token.
+   * @return either error message or token class with jwt token.
    */
-  def signIn(form: SignInForm): Future[Either[String, Token]] = {
+  def signIn(form: SignInForm): Future[Either[ErrorMessage, Token]] = {
     userDao.findByEmail(form.login).map {
       case Some(user) =>
         if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
           val jwtToken = jwtService.generateJwt(user.id)
           Right(Token(jwtToken))
         } else {
-          Left("Login or password is incorrect. Please, try again")
+          Left(ErrorMessage("Login or password is incorrect. Please, try again"))
         }
-      case None => Left("Login or password is incorrect. Please, try again")
+      case None => Left(ErrorMessage("Login or password is incorrect. Please, try again"))
     }
   }
 
@@ -44,16 +44,16 @@ class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: Executi
    * Registers user.
    *
    * @param signUpForm contains data for new user registration.
-   * @return either error response with status code and message or just signal to return positive response.
+   * @return either error message inside required response class or just signal to return positive response.
    */
-  def signUp(signUpForm: SignUpForm): Future[Either[(StatusCode, String), Unit]] = {
+  def signUp(signUpForm: SignUpForm): Future[Either[ErrorInfo, Unit]] = {
     val isValid = signUpForm.isValid // sign up form validation
     isValid match {
-      case Left(message) => Future.successful(Left(StatusCode.BadRequest, message))
+      case Left(message) => Future.successful(Left(BadRequest(message)))
       case Right(_) =>
         userDao.findByEmail(signUpForm.email).flatMap {
           case Some(_) =>
-            Future.successful(Left(StatusCode.Conflict, "User with this email is already exists"))
+            Future.successful(Left(Conflict("User with this email is already exists")))
           case None =>
             userDao.createUser(User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
               CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,

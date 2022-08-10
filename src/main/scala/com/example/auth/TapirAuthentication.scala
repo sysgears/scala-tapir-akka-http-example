@@ -1,7 +1,7 @@
 package com.example.auth
 
-import com.example.models.{ErrorMessage, User}
-import sttp.model.StatusCode
+import com.example.errors.{ErrorInfo, Unauthorized}
+import com.example.models.User
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,12 +14,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class TapirAuthentication(jwtService: JwtService)(implicit ec: ExecutionContext) {
 
   /** Extracts user from token. Return either Status code with error message or user. */
-  def authenticate(token: String): Future[Either[(StatusCode, ErrorMessage), User]] = {
+  def authenticate(token: String): Future[Either[ErrorInfo, User]] = {
     jwtService.extractUserFromJwt(token).map {
-      case Left(exception) => Left((StatusCode.Unauthorized, ErrorMessage("Token is expired. You need to log in first")))
+      case Left(exception) => Left(Unauthorized("Token is expired. You need to log in first"))
       case Right(userOpt) => userOpt match {
         case Some(user) => Right(user)
-        case None => Left((StatusCode.Unauthorized, ErrorMessage("user from token is not found")))
+        case None => Left(Unauthorized("user from token is not found"))
       }
 
     }

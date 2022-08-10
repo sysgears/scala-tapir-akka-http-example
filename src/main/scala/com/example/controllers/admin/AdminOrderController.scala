@@ -1,8 +1,8 @@
 package com.example.controllers.admin
 
 import com.example.auth.TapirSecurity
-import com.example.errors.ErrorHandler
-import com.example.models.{AdminOrderViewResponse, ErrorMessage, Order, Roles}
+import com.example.errors.{BadRequest, InternalServerError, NotFound}
+import com.example.models.{AdminOrderViewResponse, Order, Roles}
 import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
 import com.example.services.admin.AdminOrderService
 import sttp.tapir.generic.auto._
@@ -33,7 +33,7 @@ class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: Admi
     .out(jsonBody[AdminOrderViewResponse].description("Paginated list of orders, zipped with user, who made this order")) // defined response
     .serverLogic { _ => args => // server logic
       if (args.page < 1 || args.pageSize < 1) { // page arguments validation, we don't want negative offset or page size
-        Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Page arguments are invalid!"))))
+        Future.successful(Left(BadRequest("Page arguments are invalid!")))
       } else {
         adminOrderService.extractPaginatedOrders(args).map(Right(_))
       }
@@ -48,12 +48,12 @@ class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: Admi
     .serverLogic { _ => args => // server logic
       if (Order.appropriateStatuses.contains(args.newStatus.toLowerCase())) { // new status validation
         adminOrderService.updateOrderStatus(args).map {
-          case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Order ${args.orderId} not found"))) // if record wasn't updated
+          case 0 => Left(NotFound(s"Order ${args.orderId} not found")) // if record wasn't updated
           case x if x > 0 => Right("Updated!") // success
-          case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result"))) // unexpected result
+          case _ => Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
         }
       } else {
-        Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Invalid new status!"))))
+        Future.successful(Left(BadRequest("Invalid new status!")))
       }
     }
 
@@ -65,9 +65,9 @@ class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: Admi
     .out(statusCode(StatusCode.NoContent)) // set static NoContent 204 status code on success.
     .serverLogic { _ => orderId => // server logic
       adminOrderService.deleteOrder(orderId).map {
-        case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Order $orderId not found"))) // if record wasn't removed
+        case 0 => Left((NotFound(s"Order $orderId not found"))) // if record wasn't removed
         case x if x > 0 => Right(()) // success
-        case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result"))) // unexpected result
+        case _ => Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
       }
     }
 

@@ -2,7 +2,6 @@ package com.example.errors
 
 import java.util.UUID
 
-import com.example.models.ErrorMessage
 import com.typesafe.scalalogging.LazyLogging
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.generic.auto._
@@ -13,6 +12,7 @@ import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler.F
 import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
 import sttp.tapir.server.model.ValuedEndpointOutput
+import io.circe.generic.auto._
 
 import scala.concurrent.{ExecutionContext, Future}
 

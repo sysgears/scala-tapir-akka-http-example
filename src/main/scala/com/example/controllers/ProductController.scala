@@ -1,13 +1,13 @@
 package com.example.controllers
 
 import com.example.auth.TapirSecurity
-import com.example.models.{ErrorMessage, PaginatedProductListViewResponse, Roles}
+import com.example.errors.BadRequest
+import com.example.models.{PaginatedProductListViewResponse, Roles}
 import com.example.models.forms.PaginatedEndpointArguments
 import com.example.services.ProductService
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
-import sttp.model.StatusCode
 import sttp.tapir._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,7 +31,7 @@ class ProductController(tapirSecurity: TapirSecurity, productService: ProductSer
     .out(jsonBody[PaginatedProductListViewResponse].description("Contains pagination metadata and retrieved product list")) // defined response format
     .serverLogic { _ => args => // server logic
       if (args.page < 1 || args.pageSize < 1) { // page arguments validation, we don't want negative offset or page size
-        Future.successful(Left((StatusCode.BadRequest, ErrorMessage("Page arguments are invalid!"))))
+        Future.successful(Left(BadRequest("Page arguments are invalid!")))
       } else {
         productService.extractPaginatedProducts(args).map(Right(_))
       }

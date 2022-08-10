@@ -1,8 +1,9 @@
 package com.example.controllers.admin
 
 import com.example.auth.TapirSecurity
+import com.example.errors.{InternalServerError, NotFound}
 import com.example.models.forms.NewProductForm
-import com.example.models.{ErrorMessage, Product, Roles}
+import com.example.models.{Product, Roles}
 import com.example.services.admin.AdminProductService
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -59,9 +60,9 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
     .serverLogic { _ => args => // endpoint logic
       val product = args._2
       adminProductService.update(product).map {
-        case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Product ${product.id} not found"))) // if record wasn't removed
+        case 0 => Left(NotFound(s"Product ${product.id} not found")) // if record wasn't removed
         case x if x > 0 => Right("Updated!") // success
-        case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result"))) // unexpected result
+        case _ => Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
       }
     }
 
@@ -75,9 +76,9 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
     .out(statusCode(StatusCode.NoContent).description("Returns no content for delete endpoint")) // defined static 204 NoContent
     .serverLogic { _ => productId =>
       adminProductService.remove(productId).map {
-        case 0 => Left((StatusCode.NotFound, ErrorMessage(s"Product $productId not found"))) // if record wasn't removed
+        case 0 => Left(NotFound(s"Product $productId not found")) // if record wasn't removed
         case x if x > 0 => Right(()) // success
-        case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result"))) // unexpected result
+        case _ => Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
       }
     }
 
