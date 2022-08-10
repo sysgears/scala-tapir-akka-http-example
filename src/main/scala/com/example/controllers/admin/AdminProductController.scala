@@ -1,12 +1,9 @@
 package com.example.controllers.admin
 
-import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
-import com.example.errors.ErrorHandler
 import com.example.models.forms.NewProductForm
 import com.example.models.{ErrorMessage, Product, Roles}
 import com.example.services.admin.AdminProductService
-import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
@@ -22,12 +19,12 @@ import scala.concurrent.ExecutionContext
  * @param adminProductService controller service.
  * @param ec for futures.
  */
-class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: AdminProductService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
+class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: AdminProductService)(implicit ec: ExecutionContext) {
 
   /**
    * Extracts all products.
    */
-  val adminProductsViewEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val adminProductsViewEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .get // GET endpoint
     .description("Extracts products list for the admin") // endpoint description
     .in("admin" / "products") // /admin/products uri
@@ -35,12 +32,11 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
     .serverLogic { _ => _ => // endpoint logic
       adminProductService.findAllProducts().map(Right(_))
     }
-  )
 
   /**
    * Creates new product.
    */
-  val createProductEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val createProductEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .post // POST endpoint
     .description("Creates new product") // endpoint description
     .in("admin" / "products") // /admin/products uri
@@ -50,12 +46,11 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
     .serverLogic { _ => newProductForm => // endpoint logic
       adminProductService.insert(newProductForm).map(_ => Right())
     }
-  )
 
   /**
    * Updates product.
    */
-  val updateProductEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val updateProductEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .put // PUT endpoint
     .description("Updates existing product") // endpoint description
     .in("admin" / "products" / path[Long]("productId").example(2)) // /admin/products/:productId
@@ -69,12 +64,11 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
         case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result"))) // unexpected result
       }
     }
-  )
 
   /**
    * Removes product.
    */
-  val deleteProductEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val deleteProductEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .delete // DELETE endpoint
     .description("Removes product from product list") // endpoint description
     .in("admin" / "products" / path[Long]("productId").description("Id of product to delete").example(2)) // /admin/products/:productId uri
@@ -86,10 +80,9 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
         case _ => Left((StatusCode.InternalServerError, ErrorMessage("Unknown error, got less 0 result"))) // unexpected result
       }
     }
-  )
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val adminProductEndpoints: Route = Directives.concat(adminProductsViewEndpoint, createProductEndpoint,
+  val adminProductEndpoints = List(adminProductsViewEndpoint, createProductEndpoint,
     updateProductEndpoint, deleteProductEndpoint)
 
 }

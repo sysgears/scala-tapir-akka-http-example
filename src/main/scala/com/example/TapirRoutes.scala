@@ -4,10 +4,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.modules.MainModule
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax.EncoderOps
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 import scala.concurrent.Future
 import scala.io.StdIn
@@ -33,22 +33,23 @@ class TapirRoutes extends LazyLogging with MainModule {
     .out(stringBody.description("type of response")) // This endpoint will return string body. Also, description for body
     .out(statusCode(StatusCode.Created).description("Specifies response status code for success case")) // Description for result status code
 
-  val route: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirEndpoint.serverLogic { {user => _ =>
+  val testEndpoint = List(tapirEndpoint.serverLogic { user => _ =>
     // first argument from security, second from endpoint specification (described in 'in' functions)
-//    Future(Right(s"test ok response with user $user")) // response in Right for success, left for error
-    throw new Exception() }
+    //    Future(Right(s"test ok response with user $user")) // response in Right for success, left for error
+    throw new Exception()
   })
+
+  val endpointList = List(authController.authRoutes, orderController.orderRoutes,
+    productController.productEndpoints, adminProductController.adminProductEndpoints, adminOrderController.adminOrderEndpoints, testEndpoint).flatten
+
+  val swaggerEndpoints = SwaggerInterpreter().fromEndpoints[Future](endpointList.map(_.endpoint), "My App", "1.0")
 
   /**
    * Result route. Contains all active endpoints and this route will be bound to the server.
    */
-  val resultRoute: Route = Directives.concat(route,
-    AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(errorHandler.prometheusMetrics.metricsEndpoint),
-    authController.authRoutes,
-    orderController.orderRoutes,
-    productController.productEndpoints,
-    adminProductController.adminProductEndpoints,
-    adminOrderController.adminOrderEndpoints)
+  val resultRoute: Route = Directives.concat(AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(swaggerEndpoints),
+    AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpointList),
+    AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(errorHandler.prometheusMetrics.metricsEndpoint))
 
   /**
    * Starts server using route above.

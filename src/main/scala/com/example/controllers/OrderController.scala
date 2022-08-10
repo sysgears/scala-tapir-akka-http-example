@@ -2,9 +2,7 @@ package com.example.controllers
 
 import java.time.LocalDateTime
 
-import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
-import com.example.errors.ErrorHandler
 import com.example.models.{ErrorMessage, Order, OrderRecord, OrderWithRecords, Product, Roles}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.services.OrderService
@@ -13,7 +11,6 @@ import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
 import sttp.tapir._
 import sttp.model.StatusCode
-import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir.{path, statusCode}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,12 +22,12 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param orderService service for the controller.
  * @param ec for futures.
  */
-class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
+class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(implicit ec: ExecutionContext) {
 
   /**
    * Create order endpoint.
    */
-  val createOrderEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
+  val createOrderEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .post // POST endpoint
     .in("orders") // /orders uri
     .in(jsonBody[CreateOrderForm] // request has to have body of CreateOrderForm
@@ -43,10 +40,10 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService, 
       } else {
         Future.successful(Left(StatusCode.BadRequest, ErrorMessage("Some order record contains invalid value!")))
       }
-    })
+    }
 
   /** get user's orders list view endpoint definition. */
-  val viewUserOrderListEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
+  val viewUserOrderListEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .get // GET endpoint
     .description("Extracts orders for the user")
     .in("orders") // /orders uri
@@ -56,10 +53,9 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService, 
     .serverLogic { user => _ => // endpoint logic definition
       orderService.findOrdersForUser(user.id).map(Right(_))
     }
-  )
 
   /** get order details endpoint definition */
-  val viewUserOrderEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
+  val viewUserOrderEndpoint = tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .get // GET endpoint
     .in("orders" / path[Long]("orderId").description("Order's id to retrieve information")) // /orders/:orderId uri
     .out(jsonBody[OrderWithRecords].description("Contains order itself with it's entries") // set response json format
@@ -71,9 +67,8 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService, 
         case None => Left(StatusCode.NotFound, ErrorMessage("Order with that id not found"))
       }
     }
-  )
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val orderRoutes: Route = Directives.concat(createOrderEndpoint, viewUserOrderListEndpoint, viewUserOrderEndpoint)
+  val orderRoutes = List(createOrderEndpoint, viewUserOrderListEndpoint, viewUserOrderEndpoint)
 }
 

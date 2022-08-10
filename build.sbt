@@ -26,6 +26,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % TapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % TapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-prometheus-metrics" % TapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % TapirVersion,
   "io.circe" %% "circe-core" % CirceVersion,
   "io.circe" %% "circe-generic" % CirceVersion,
   "io.circe" %% "circe-generic-extras" % CirceVersion,

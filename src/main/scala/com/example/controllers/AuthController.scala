@@ -1,7 +1,5 @@
 package com.example.controllers
 
-import akka.http.scaladsl.server.{Directives, Route}
-import com.example.errors.ErrorHandler
 import com.example.models.Token
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.services.AuthService
@@ -10,7 +8,6 @@ import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
 import sttp.model.StatusCode
-import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 
 import scala.concurrent.ExecutionContext
 
@@ -20,12 +17,12 @@ import scala.concurrent.ExecutionContext
  * @param authService service for the controller.
  * @param ec for futures.
  */
-class AuthController(authService: AuthService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
+class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
 
   /**
    * Sign in endpoint defining.
    */
-  val signInEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpoint
+  val signInEndpoint = endpoint
     .post // POST endpoint
     .in("signIn") // /signIn uri
     .in(jsonBody[SignInForm] // requires signInForm in request body, added description and example.
@@ -34,12 +31,12 @@ class AuthController(authService: AuthService, errorHandler: ErrorHandler)(impli
     .errorOut(jsonBody[String]) // described error response type, will return string as json with http 400 code
     .serverLogic { form => // defining logic for the endpoint.
       authService.signIn(form)
-    })
+    }
 
   /**
    * Sign up endpoint defining.
    */
-  val signUpEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpoint
+  val signUpEndpoint = endpoint
     .post // POST endpoint
     .in("signUp") // /signUp defining.
     .in(jsonBody[SignUpForm] // requires signUpForm in request body, added description and example.
@@ -51,8 +48,8 @@ class AuthController(authService: AuthService, errorHandler: ErrorHandler)(impli
     .errorOut(jsonBody[String].description("Contains reason of response")) // defining response type for error response.
     .serverLogic { signUpForm => // defined logic for the endpoint.
       authService.signUp(signUpForm)
-    })
+    }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val authRoutes: Route = Directives.concat(signInEndpoint, signUpEndpoint)
+  val authRoutes = List(signInEndpoint, signUpEndpoint)
 }

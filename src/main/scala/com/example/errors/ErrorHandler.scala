@@ -26,11 +26,13 @@ class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
       ctx.failingInput match {
         // when defining how a decode failure should be handled, we need to describe the output to be used, and
         // a value for this output
-        case x =>
+        case _: EndpointIO.Body[_, _] =>
           // see this function and then to failureSourceMessage function to find out which types of decode errors are present
           val failureMessage = FailureMessages.failureMessage(ctx)
-          logger.info(failureMessage)
+          logger.info(s"${ctx.endpoint.showShort} - $failureMessage")
+          // warning - log working incorrect when there are several endpoints for
           DefaultDecodeFailureHandler.default(ctx)
+        case _ => DefaultDecodeFailureHandler.default(ctx)
       }
     })
     .metricsInterceptor(prometheusMetrics.metricsInterceptor())
