@@ -14,6 +14,8 @@ This example contains:
 - failed decoding customization
 - request wrappers (request handling time tracker)
 - adding prometheus metrics
+- connecting swagger docs
+- set and describe http codes for error response
 
 Also example contains Quill as library which works with database, similar to Slick and Macwire, which works similar to Guice.
 
