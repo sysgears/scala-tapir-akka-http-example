@@ -2,6 +2,7 @@ package com.example.controllers.admin
 
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
+import com.example.errors.ErrorHandler
 import com.example.models.{AdminOrderViewResponse, ErrorMessage, Order, Roles}
 import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
 import com.example.services.admin.AdminOrderService
@@ -21,12 +22,12 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param adminOrderService service for the controller.
  * @param ec for futures.
  */
-class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: AdminOrderService)(implicit ec: ExecutionContext) {
+class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: AdminOrderService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
 
   /**
    * Retrieves paginated orders
    */
-  val adminOrdersView: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin)) // restricted, admins only
+  val adminOrdersView: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin)) // restricted, admins only
     .get // GET endpoint
     .description("Showing paginated orders for admin with opportunity to sort by some parameters") // endpoint description
     .in("admin" / "orders") // /admin/orders uri
@@ -42,7 +43,7 @@ class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: Admi
   )
 
   /** Changes order status */
-  val changeOrderStatusEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val changeOrderStatusEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .put // PUT endpoint
     .description("Updates order's status. Can change to unprocessed, processed or complete") // endpoint description
     .in(EndpointInput.derived[AdminOrderStatusChangeArguments]) // defined arguments
@@ -61,7 +62,7 @@ class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: Admi
   )
 
   /** Removes order from orders records */
-  val deleteOrderEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val deleteOrderEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .delete // DELETE endpoint
     .description("Removes order")
     .in("admin" / "orders" / path[Long]("orderId").description("Id of order to delete").example(2)) // /admin/orders/:orderId uri

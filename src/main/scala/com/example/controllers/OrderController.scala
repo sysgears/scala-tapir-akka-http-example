@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
+import com.example.errors.ErrorHandler
 import com.example.models.{ErrorMessage, Order, OrderRecord, OrderWithRecords, Product, Roles}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.services.OrderService
@@ -24,12 +25,12 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param orderService service for the controller.
  * @param ec for futures.
  */
-class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(implicit ec: ExecutionContext) {
+class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
 
   /**
    * Create order endpoint.
    */
-  val createOrderEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
+  val createOrderEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .post // POST endpoint
     .in("orders") // /orders uri
     .in(jsonBody[CreateOrderForm] // request has to have body of CreateOrderForm
@@ -45,7 +46,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
     })
 
   /** get user's orders list view endpoint definition. */
-  val viewUserOrderListEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
+  val viewUserOrderListEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .get // GET endpoint
     .description("Extracts orders for the user")
     .in("orders") // /orders uri
@@ -58,7 +59,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
   )
 
   /** get order details endpoint definition */
-  val viewUserOrderEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
+  val viewUserOrderEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // accessible only for users with role User
     .get // GET endpoint
     .in("orders" / path[Long]("orderId").description("Order's id to retrieve information")) // /orders/:orderId uri
     .out(jsonBody[OrderWithRecords].description("Contains order itself with it's entries") // set response json format

@@ -5,6 +5,7 @@ import com.example.auth.{JwtService, TapirAuthentication, TapirSecurity}
 import com.example.controllers.admin._
 import com.example.controllers._
 import com.example.dao._
+import com.example.errors.ErrorHandler
 import com.example.services._
 import com.example.services.admin._
 import com.softwaremill.macwire._
@@ -24,6 +25,7 @@ trait MainModule {
   lazy val config: Config = ConfigFactory.load() // for macwire not necessary to wire everything, having required component in scope is enough.
   lazy val ctx = new PostgresJdbcContext(SnakeCase, "db.default")
   lazy val userDao          = wire[UserDao]
+  lazy val errorHandler     = wire[ErrorHandler]
   lazy val orderDao         = wire[OrderDao]
   lazy val productDao       = wire[ProductDao]
   lazy val orderProductDao  = wire[OrderProductDao]

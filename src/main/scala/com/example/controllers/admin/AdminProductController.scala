@@ -2,6 +2,7 @@ package com.example.controllers.admin
 
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
+import com.example.errors.ErrorHandler
 import com.example.models.forms.NewProductForm
 import com.example.models.{ErrorMessage, Product, Roles}
 import com.example.services.admin.AdminProductService
@@ -21,12 +22,12 @@ import scala.concurrent.ExecutionContext
  * @param adminProductService controller service.
  * @param ec for futures.
  */
-class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: AdminProductService)(implicit ec: ExecutionContext) {
+class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: AdminProductService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
 
   /**
    * Extracts all products.
    */
-  val adminProductsViewEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val adminProductsViewEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .get // GET endpoint
     .description("Extracts products list for the admin") // endpoint description
     .in("admin" / "products") // /admin/products uri
@@ -39,7 +40,7 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
   /**
    * Creates new product.
    */
-  val createProductEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val createProductEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .post // POST endpoint
     .description("Creates new product") // endpoint description
     .in("admin" / "products") // /admin/products uri
@@ -54,7 +55,7 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
   /**
    * Updates product.
    */
-  val updateProductEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val updateProductEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .put // PUT endpoint
     .description("Updates existing product") // endpoint description
     .in("admin" / "products" / path[Long]("productId").example(2)) // /admin/products/:productId
@@ -73,7 +74,7 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
   /**
    * Removes product.
    */
-  val deleteProductEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
+  val deleteProductEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.Admin))
     .delete // DELETE endpoint
     .description("Removes product from product list") // endpoint description
     .in("admin" / "products" / path[Long]("productId").description("Id of product to delete").example(2)) // /admin/products/:productId uri

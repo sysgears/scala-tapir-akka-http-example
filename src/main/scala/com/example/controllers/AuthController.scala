@@ -1,6 +1,7 @@
 package com.example.controllers
 
 import akka.http.scaladsl.server.{Directives, Route}
+import com.example.errors.ErrorHandler
 import com.example.models.Token
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.services.AuthService
@@ -19,12 +20,12 @@ import scala.concurrent.ExecutionContext
  * @param authService service for the controller.
  * @param ec for futures.
  */
-class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
+class AuthController(authService: AuthService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
 
   /**
    * Sign in endpoint defining.
    */
-  val signInEndpoint: Route = AkkaHttpServerInterpreter().toRoute(endpoint
+  val signInEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpoint
     .post // POST endpoint
     .in("signIn") // /signIn uri
     .in(jsonBody[SignInForm] // requires signInForm in request body, added description and example.
@@ -38,7 +39,7 @@ class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
   /**
    * Sign up endpoint defining.
    */
-  val signUpEndpoint: Route = AkkaHttpServerInterpreter().toRoute(endpoint
+  val signUpEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(endpoint
     .post // POST endpoint
     .in("signUp") // /signUp defining.
     .in(jsonBody[SignUpForm] // requires signUpForm in request body, added description and example.

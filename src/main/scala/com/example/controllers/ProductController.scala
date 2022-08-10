@@ -2,6 +2,7 @@ package com.example.controllers
 
 import akka.http.scaladsl.server.{Directives, Route}
 import com.example.auth.TapirSecurity
+import com.example.errors.ErrorHandler
 import com.example.models.{ErrorMessage, PaginatedProductListViewResponse, Roles}
 import com.example.models.forms.PaginatedEndpointArguments
 import com.example.services.ProductService
@@ -20,12 +21,12 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param productService service for the controller.
  * @param ec for futures.
  */
-class ProductController(tapirSecurity: TapirSecurity, productService: ProductService)(implicit ec: ExecutionContext) {
+class ProductController(tapirSecurity: TapirSecurity, productService: ProductService, errorHandler: ErrorHandler)(implicit ec: ExecutionContext) {
 
   /**
    * Retrieves paginated list of products.
    */
-  val paginatedProductListEndpoint: Route = AkkaHttpServerInterpreter().toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // restricted, only for users
+  val paginatedProductListEndpoint: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirSecurity.tapirSecurityEndpoint(List(Roles.User)) // restricted, only for users
     .get // GET endpoint
     .description("Shows paginated list of products for user") // endpoint description
     .in("products") // /products uri

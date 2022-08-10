@@ -33,15 +33,17 @@ class TapirRoutes extends LazyLogging with MainModule {
     .out(stringBody.description("type of response")) // This endpoint will return string body. Also, description for body
     .out(statusCode(StatusCode.Created).description("Specifies response status code for success case")) // Description for result status code
 
-  val route: Route = AkkaHttpServerInterpreter().toRoute(tapirEndpoint.serverLogic { user => _ =>
+  val route: Route = AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(tapirEndpoint.serverLogic { {user => _ =>
     // first argument from security, second from endpoint specification (described in 'in' functions)
-    Future(Right(s"test ok response with user $user")) // response in Right for success, left for error
+//    Future(Right(s"test ok response with user $user")) // response in Right for success, left for error
+    throw new Exception() }
   })
 
   /**
    * Result route. Contains all active endpoints and this route will be bound to the server.
    */
   val resultRoute: Route = Directives.concat(route,
+    AkkaHttpServerInterpreter(errorHandler.customServerOptions).toRoute(errorHandler.prometheusMetrics.metricsEndpoint),
     authController.authRoutes,
     orderController.orderRoutes,
     productController.productEndpoints,
