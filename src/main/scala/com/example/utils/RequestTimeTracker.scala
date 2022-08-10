@@ -61,9 +61,9 @@ class RequestTimeTracker(implicit ec: ExecutionContext) extends LazyLogging {
                   // Call onDone right away, since there's no significant amount of
                   // data to send, anyway.
                   entity.transformDataBytes(Flow[ByteString].watchTermination() {
-                    case (m, f) =>
-                      f.map(_ => c).onComplete(onDone) // stops timer after stopping sending response
-                      m
+                    case (mat, future) =>
+                      future.map(_ => c).onComplete(onDone) // stops timer after finishing sending response
+                      mat
                   })
                 }
               })
