@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao}
 import com.example.models.{Order, OrderProduct, OrderRecord, OrderWithRecords}
 import com.example.models.forms.CreateOrderForm
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 class OrderService(orderDao: OrderDao,
                    productDao: ProductDao,
-                   orderProductDao: OrderProductDao)(implicit ec: ExecutionContext) {
+                   orderProductDao: OrderProductDao)(implicit ec: ExecutionContext) extends LazyLogging {
 
   /**
    * Creates new order and associate it to the user.
@@ -37,6 +38,7 @@ class OrderService(orderDao: OrderDao,
       updatedProducts = products.map(_.copy(orderId = orderId))
       insertResult <- orderProductDao.insertBatch(updatedProducts)
     } yield {
+      logger.debug(s"Order with id $orderId has been created.")
       insertResult
     }
   }
@@ -48,6 +50,7 @@ class OrderService(orderDao: OrderDao,
    * @return orders for the user.
    */
   def findOrdersForUser(userId: Long): Future[List[Order]] = {
+    logger.debug(s"Received request to extract orders for user with id $userId")
     orderDao.findForUser(userId)
   }
 
@@ -58,6 +61,7 @@ class OrderService(orderDao: OrderDao,
    * @return extended order with records, which contains order details.
    */
   def getOrderDetails(orderId: Long): Future[Option[OrderWithRecords]] = {
+    logger.trace(s"Received request to extract details for order with id $orderId")
     orderDao.find(orderId).flatMap {
       case Some(order) =>
         for {
@@ -68,6 +72,7 @@ class OrderService(orderDao: OrderDao,
             val product = products.find(_.id == orderProduct.productId)
             OrderRecord(orderProduct.id, orderProduct.orderId, product, orderProduct.quantity)
           }
+          logger.debug(s"Extracted details for order with id $orderId, extracted order records size ${extendedOrderProducts.size}")
           Some(OrderWithRecords(order, extendedOrderProducts))
         }
       case None => Future.successful(None)

@@ -3,15 +3,17 @@ package com.example.services.admin
 import com.example.dao.{OrderDao, OrderProductDao, ProductDao, UserDao}
 import com.example.models.{AdminOrderViewResponse, OrderRecord, OrderWithRecords, PaginationMetadata, ShortUser, UserOrder}
 import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AdminOrderService(orderDao: OrderDao,
                         productDao: ProductDao,
                         userDao: UserDao,
-                        orderProductDao: OrderProductDao)(implicit ec: ExecutionContext) {
+                        orderProductDao: OrderProductDao)(implicit ec: ExecutionContext) extends LazyLogging {
 
   def extractPaginatedOrders(args: PaginatedEndpointArguments): Future[AdminOrderViewResponse] = {
+    logger.trace(s"Started extracting paginated orders, page: ${args.page}, page size: ${args.pageSize}")
     val offset = (args.page - 1) * args.pageSize
     val findPaginatedFuture = orderDao.findPaginated(args.pageSize, offset)
     val countOrdersFuture = orderDao.countOrders()
@@ -32,6 +34,7 @@ class AdminOrderService(orderDao: OrderDao,
       }
       val pages = (orderCount.toDouble / args.pageSize.toDouble).ceil.toInt // calculating amount of available pages
       val metadata = PaginationMetadata(args.page, args.pageSize, pages, orderCount)
+      logger.debug(s"Extracted paginated orders, pack size: ${userOrders.size}, response metadata: $metadata")
       AdminOrderViewResponse(metadata, userOrders)
     }
   }

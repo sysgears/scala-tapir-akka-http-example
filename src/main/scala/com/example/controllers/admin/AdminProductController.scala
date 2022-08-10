@@ -5,6 +5,7 @@ import com.example.errors.{InternalServerError, NotFound}
 import com.example.models.forms.NewProductForm
 import com.example.models.{Product, Roles}
 import com.example.services.admin.AdminProductService
+import com.typesafe.scalalogging.LazyLogging
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
@@ -20,7 +21,7 @@ import scala.concurrent.ExecutionContext
  * @param adminProductService controller service.
  * @param ec for futures.
  */
-class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: AdminProductService)(implicit ec: ExecutionContext) {
+class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: AdminProductService)(implicit ec: ExecutionContext) extends LazyLogging {
 
   /**
    * Extracts all products.
@@ -62,7 +63,9 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
       adminProductService.update(product).map {
         case 0 => Left(NotFound(s"Product ${product.id} not found")) // if record wasn't removed
         case x if x > 0 => Right("Updated!") // success
-        case _ => Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
+        case _ =>
+          logger.error(s"Intercepted unusual case when response from database is less than 0, PUT /admin/products/${product.id} endpoint, update product: $product")
+          Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
       }
     }
 
@@ -78,7 +81,9 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
       adminProductService.remove(productId).map {
         case 0 => Left(NotFound(s"Product $productId not found")) // if record wasn't removed
         case x if x > 0 => Right(()) // success
-        case _ => Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
+        case _ =>
+          logger.error(s"Intercepted unusual case when response from database is less than 0, DELETE /admin/products/$productId endpoint, delete product with id: $productId")
+          Left(InternalServerError("Unknown error, got less 0 result")) // unexpected result
       }
     }
 

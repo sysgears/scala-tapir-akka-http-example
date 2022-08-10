@@ -8,6 +8,7 @@ import com.example.errors.{BadRequest, Conflict, ErrorInfo, ErrorMessage}
 import com.example.models.{Roles, Token, User}
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.utils.CryptUtils
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param jwtService contains functions, which works with jwt token.
  * @param ec for futures.
  */
-class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) {
+class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) extends LazyLogging {
 
   /**
    * Signs in user.
@@ -31,6 +32,7 @@ class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: Executi
     userDao.findByEmail(form.login).map {
       case Some(user) =>
         if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
+          logger.debug(s"User with id ${user.id} has logged in")
           val jwtToken = jwtService.generateJwt(user.id)
           Right(Token(jwtToken))
         } else {
@@ -55,9 +57,11 @@ class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: Executi
           case Some(_) =>
             Future.successful(Left(Conflict("User with this email is already exists")))
           case None =>
-            userDao.createUser(User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
+            val newUser = User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
               CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
-              signUpForm.address, Roles.User, LocalDateTime.now)).map { _ =>
+              signUpForm.address, Roles.User, LocalDateTime.now)
+            userDao.createUser(newUser).map { _ =>
+              logger.debug(s"User with email ${newUser.email} has registered.")
               Right(())
             }
         }
