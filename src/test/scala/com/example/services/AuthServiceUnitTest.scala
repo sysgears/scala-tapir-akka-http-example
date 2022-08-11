@@ -15,10 +15,12 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 
 import scala.concurrent.Future
 
+/** Tests for auth service to check if implementation works as intended. */
 class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
 
   val testUser: User = User(1, "test name", "+777777777", "test@example.com", "$2a$10$XMuxo.3xlVlGnySYCUOOIOl09n6olXw7aV2daE9Ief.Gd/js.Fq1O", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
 
+  /** Case when signIn function received correct form. */
   it should "comparing correct user correctly" in {
     // preparations
     val userDao = mock[UserDao]
@@ -38,6 +40,7 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     }
   }
 
+  /** Case when passwords not matches. */
   it should "comparing incorrect user correctly" in {
     // preparations
     val userDao = mock[UserDao]
@@ -57,6 +60,7 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     }
   }
 
+  /** Case for login when user not found for the email. */
   it should "return correct result if user not found" in {
     // preparations
     val userDao = mock[UserDao]
@@ -75,6 +79,7 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     }
   }
 
+  /** Case when registration form is correct. */
   it should "register new user correctly" in {
     // preparations
     val userDao = mock[UserDao]
@@ -93,7 +98,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     }
   }
 
-  it should "return conflict when registration new user" in {
+  /** Case for registration when user with that email exists.  */
+  it should "return conflict for registration new user" in {
     // preparations
     val userDao = mock[UserDao]
     val jwtService = mock[JwtService]
@@ -112,6 +118,7 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     }
   }
 
+  /** Case for registration when registration form is invalid. */
   it should "return badRequest when registration form is invalid" in {
     // preparations
     val userDao = mock[UserDao]
