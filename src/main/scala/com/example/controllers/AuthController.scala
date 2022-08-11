@@ -29,7 +29,7 @@ class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
     .description("Sign in endpoint.")
     .in(jsonBody[SignInForm] // requires signInForm in request body, added description and example.
           .description("Required data to log in").example(SignInForm("test@example.com", "pass4567")))
-    .out(jsonBody[Token].description("Bearer token for authorization header").example(Token("Bearer lkngla2pj45ij3oijma2oij..."))) // described response
+    .out(jsonBody[Token].description("Bearer token for authorization header").example(Token("lkngla2pj45ij3oijma2oij..."))) // described response
     .errorOut(jsonBody[ErrorMessage]) // described error response type, will return string as json with http 400 code
     .serverLogic { form => // defining logic for the endpoint.
       authService.signIn(form)
