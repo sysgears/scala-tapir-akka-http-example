@@ -21,6 +21,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-async" % "1.0.1",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+  "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub-server" % "1.0.4" % Test,
+  "org.scalatestplus" %% "mockito-4-6" % "3.2.13.0" % Test,
   "com.softwaremill.sttp.tapir" %% "tapir-core" % TapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % TapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % TapirVersion,
