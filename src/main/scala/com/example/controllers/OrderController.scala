@@ -3,7 +3,7 @@ package com.example.controllers
 import java.time.LocalDateTime
 
 import com.example.auth.TapirSecurity
-import com.example.errors.BadRequest
+import com.example.errors.{BadRequest, NotFound}
 import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.services.OrderService
@@ -67,7 +67,7 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: OrderService)(
     .serverLogic { _ => orderId => // endpoint logic definition.
       orderService.getOrderDetails(orderId).map {
         case Some(orderWithRecords) => Right(orderWithRecords)
-        case None => Left(BadRequest("Order with that id not found"))
+        case None => Left(NotFound("Order with that id not found"))
       }
     }
 
