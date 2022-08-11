@@ -36,3 +36,4 @@ Useful links
 - Macwire github: https://github.com/softwaremill/macwire
 - Circe documentation: https://circe.github.io/circe/
 - Measuring response time in akka http (took implementation from there): https://blog.softwaremill.com/measuring-response-time-in-akka-http-7b6312ec70cf
+- Tapir endpoints testing: https://tapir.softwaremill.com/en/latest/testing.html
