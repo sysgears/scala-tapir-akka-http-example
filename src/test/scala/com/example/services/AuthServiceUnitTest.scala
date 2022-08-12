@@ -31,6 +31,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     when(userDao.findByEmail(any[String])).thenReturn(Future.successful(Some(testUser)))
     when(jwtService.generateJwt(anyLong())).thenReturn("token")
     val signInForm = SignInForm("test@example.com", "password")
+
+    // when
     val signInResult = authService.signIn(signInForm)
 
     //then
@@ -51,6 +53,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     when(userDao.findByEmail(any[String])).thenReturn(Future.successful(Some(testUser)))
     when(jwtService.generateJwt(anyLong())).thenReturn("token")
     val signInForm = SignInForm("test@example.com", "password1")
+
+    // when
     val signInResult = authService.signIn(signInForm)
 
     //then
@@ -70,6 +74,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     //given
     when(userDao.findByEmail(any[String])).thenReturn(Future.successful(None))
     val signInForm = SignInForm("test@example.com", "password1")
+
+    // when
     val signInResult = authService.signIn(signInForm)
 
     //then
@@ -90,6 +96,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     when(userDao.findByEmail(any[String])).thenReturn(Future.successful(None))
     when(userDao.createUser(any[User])).thenReturn(Future.successful(1))
     val signUpForm = SignUpForm("test name", "+77777777777", "test@example.com", "49050", "Dnipro", "test address, 46", "pass456", "pass456")
+
+    // when
     val signUpResult = authService.signUp(signUpForm)
 
     //then
@@ -109,6 +117,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     when(userDao.findByEmail(any[String])).thenReturn(Future.successful(Some(testUser)))
     when(userDao.createUser(any[User])).thenReturn(Future.successful(1))
     val signUpForm = SignUpForm("test name", "+77777777777", "test@example.com", "49050", "Dnipro", "test address, 46", "pass456", "pass456")
+
+    // when
     val signUpResult = authService.signUp(signUpForm)
 
     //then
@@ -129,6 +139,8 @@ class AuthServiceUnitTest extends AsyncFlatSpec with Matchers {
     when(userDao.findByEmail(any[String])).thenReturn(Future.successful(Some(testUser)))
     when(userDao.createUser(any[User])).thenReturn(Future.successful(1))
     val signUpForm = SignUpForm("test name", "+77777777777", "test@example.com", "49050", "Dnipro", "test address, 46", "pass456", "pass4567")
+
+    // when
     val signUpResult = authService.signUp(signUpForm)
 
     //then
