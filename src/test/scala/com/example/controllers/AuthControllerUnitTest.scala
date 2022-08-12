@@ -4,6 +4,7 @@ import com.example.errors.{BadRequest, Conflict, ErrorMessage}
 import com.example.models.Token
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.services.AuthService
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -18,7 +19,7 @@ import sttp.tapir.server.stub.TapirStubInterpreter
 
 import scala.concurrent.Future
 
-class AuthControllerUnitTest extends AsyncFlatSpec with Matchers {
+class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
 
   it should "log in correctly" in {
     val authService = mock[AuthService]
@@ -37,7 +38,7 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers {
       .send(backendStub)
 
     // then
-    response.map(x => println(s"signIn expecting Token message body: ${x.body}"))
+    response.map(x => logger.info(s"signIn expecting Token message body: ${x.body}"))
     response.map(_.body shouldBe Right(Token("password").asJson.noSpaces))
   }
 
@@ -59,7 +60,7 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"signIn expecting BadRequest message body: ${resp.body}")
+      logger.info(s"signIn expecting BadRequest message body: ${resp.body}")
       resp.code shouldBe StatusCode.BadRequest
       resp.body shouldBe Left(ErrorMessage("Login or password is incorrect. Please, try again").asJson.noSpaces)
     }
@@ -83,7 +84,7 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"signUp expecting Conflict message body: ${resp.body}")
+      logger.info(s"signUp expecting Conflict message body: ${resp.body}")
       resp.code shouldBe StatusCode.Conflict
       resp.body shouldBe Left(Conflict("User with this email is already exists").asJson.noSpaces)
     }
@@ -107,7 +108,7 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"signUp expecting BadRequest message body: ${resp.body}")
+      logger.info(s"signUp expecting BadRequest message body: ${resp.body}")
       resp.code shouldBe StatusCode.BadRequest
       resp.body shouldBe Left(BadRequest("BadRequest message").asJson.noSpaces)
     }

@@ -7,6 +7,7 @@ import com.example.errors.BadRequest
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles, User}
 import com.example.services.OrderService
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -24,7 +25,7 @@ import scala.concurrent.Future
 /**
  * Contains example of mocking authentication.
  */
-class OrderControllerUnitTest extends AsyncFlatSpec with Matchers {
+class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
   val testUser: User = User(1, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
 
   val authentication: TapirAuthentication = mock[TapirAuthentication]
@@ -51,7 +52,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expecting Order list message body: ${resp.body}")
+      logger.info(s"orders expecting Order list message body: ${resp.body}")
       resp.body shouldBe Right(orderList.asJson.noSpaces)
     }
   }
@@ -78,7 +79,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expecting Order details message body: ${resp.body}")
+      logger.info(s"orders expecting Order details message body: ${resp.body}")
       resp.body shouldBe Right(orderResponse.asJson.noSpaces)
     }
   }
@@ -103,7 +104,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expecting Order details NotFound message body: ${resp.body}")
+      logger.info(s"orders expecting Order details NotFound message body: ${resp.body}")
       resp.code shouldBe StatusCode.NotFound
     }
   }
@@ -129,7 +130,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expected creating new order with Created http response")
+      logger.info(s"orders expected creating new order with Created http response")
       resp.code shouldBe StatusCode.Created
     }
   }
@@ -155,7 +156,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expected creating new order with Created http response")
+      logger.info(s"orders expected creating new order with Created http response")
       resp.code shouldBe StatusCode.BadRequest
       resp.body shouldBe Left(BadRequest("Some order record contains invalid value!").asJson.noSpaces)
     }

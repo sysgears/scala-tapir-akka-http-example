@@ -6,6 +6,7 @@ import com.example.auth.{TapirAuthentication, TapirSecurity}
 import com.example.errors.{Forbidden, Unauthorized}
 import com.example.models.{Roles, User}
 import com.example.services.OrderService
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
@@ -27,7 +28,7 @@ import scala.concurrent.Future
  *
  * Only invalid cases are present, because other tests using this security will use success auth case.
  */
-class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers {
+class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
 
   val testUser: User = User(1, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
 
@@ -53,7 +54,7 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expecting 403 Forbidden: ${resp.body}")
+      logger.info(s"orders expecting 403 Forbidden: ${resp.body}")
       resp.code shouldBe StatusCode.Forbidden
       resp.body shouldBe Left(Forbidden("user is not allowed to use this endpoint").asJson.noSpaces)
     }
@@ -107,7 +108,7 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers {
 
     // then
     response.map { resp =>
-      println(s"orders expecting 401 Unauthorized when header is missing: ${resp.body}")
+      logger.info(s"orders expecting 401 Unauthorized when header is missing: ${resp.body}")
       resp.code shouldBe StatusCode.Unauthorized
     }
   }
