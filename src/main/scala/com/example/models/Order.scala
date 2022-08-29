@@ -2,7 +2,7 @@ package com.example.models
 
 import java.time.LocalDateTime
 
-case class Order(id: Long, userId: Long, created: LocalDateTime, status: String, lastUpdate: LocalDateTime, comment: String)
+case class Order(id: Long, userId: Long, created: LocalDateTime, status: String, lastUpdated: LocalDateTime, comment: String)
 
 /**
  * Contains appropriate statuses for orders.
