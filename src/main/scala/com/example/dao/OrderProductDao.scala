@@ -21,7 +21,7 @@ class OrderProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(
    * Query schema for orderProducts.
    */
   private val orderItems = quote {
-    querySchema[OrderProduct]("order_items")
+    querySchema[OrderProduct]("order_products")
   }
 
   /** Creates orderProduct in database and returns generated id. */
