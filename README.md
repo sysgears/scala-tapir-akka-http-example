@@ -20,6 +20,9 @@ This example contains:
 
 Also example contains Quill as library which works with database, similar to Slick and Macwire, which works similar to Guice.
 
+Note: to run this example in first time, you have to apply sql scripts from resource directory!
+
+
 Stack
 -
 - Tapir v1.0.3
