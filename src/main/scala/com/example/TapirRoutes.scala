@@ -36,7 +36,7 @@ class TapirRoutes extends LazyLogging with MainModule {
   val testEndpoint = List(tapirEndpoint.serverLogic { user => _ =>
     // first argument from security, second from endpoint specification (described in 'in' functions)
     //    Future(Right(s"test ok response with user $user")) // response in Right for success, left for error
-    throw new Exception()
+    throw new Exception() // currently throws exceptions to show exception handling
   })
 
   val endpointList = List(authController.authRoutes, orderController.orderRoutes,
