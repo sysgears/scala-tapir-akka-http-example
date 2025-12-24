@@ -1,14 +1,15 @@
 package com.example.services
 
 import java.time.LocalDateTime
-
 import com.example.auth.JwtService
 import com.example.dao.UserDao
+import com.example.dao.UserDao.UserRepository
 import com.example.errors.{BadRequest, Conflict, ErrorInfo, ErrorMessage}
 import com.example.models.{Roles, Token, User}
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.utils.CryptUtils
 import com.typesafe.scalalogging.LazyLogging
+import zio.{ZIO, ZLayer}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,8 +22,25 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param jwtService contains functions, which works with jwt token.
  * @param ec for futures.
  */
-class AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) extends LazyLogging {
+object AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) extends LazyLogging {
 
+  type Authentication = Service
+
+  trait Service {
+    def signIn(form: SignInForm): ZIO[Any, ErrorInfo, Token]
+    def signUp(signUpForm: SignUpForm): ZIO[Any, ErrorInfo, Unit]
+  }
+
+  def signIn(form: SignInForm): ZIO[Authentication, ErrorInfo, Token] = ZIO.serviceWithZIO[Authentication](_.signIn(form))
+  def signUp(form: SignUpForm): ZIO[Authentication, ErrorInfo, Unit] = ZIO.serviceWithZIO[Authentication](_.signUp(form))
+
+  val live = ZLayer {
+    for {
+      userDao <- ZIO.service[UserRepository]
+      jwtService <-
+
+    }
+  }
   /**
    * Signs in user.
    * @param form contains login and password for sign in.

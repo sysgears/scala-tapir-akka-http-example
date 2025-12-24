@@ -1,31 +1,32 @@
 package com.example.auth
 
-import com.example.errors.{BadRequest, ErrorInfo, Forbidden, InternalServerError, NotFound, Unauthorized}
+import com.example.auth.TapirAuthentication.TapirAuth
+import com.example.errors._
 import com.example.models.Roles.RoleType
 import com.example.models.User
-import com.example.utils.Util.foldEitherOfFuture
+import com.example.utils.ZioUtil
+import io.circe.generic.auto._
 import sttp.model.StatusCode
 import sttp.tapir.generic.auto._
-import sttp.tapir.{auth, endpoint}
-import sttp.tapir._
-import io.circe.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.PartialServerEndpoint
+import sttp.tapir._
+import zio.{ULayer, ZIO}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 /**
  * Configures security endpoint.
  *
  * @param authentication authentication service.
- * @param ec for futures.
  */
-class TapirSecurity(authentication: TapirAuthentication)(implicit ec: ExecutionContext) {
+class TapirSecurity(authentication: ULayer[TapirAuth]) {
 
   /**
    * Creates secured endpoint with role restriction from argument. If role list is empty - authorization is disabled
    *
-   * PartialServerEndpoint explained: [Security input, Security output, Input, Error response, Output, idk what is this, wrapper (in most cases - future)]
+   * PartialServerEndpoint explained: [Security input, Security output, Input, Error response, Output,
+   *   capabilities that are required by this endpoint's inputs/outputs, wrapper (in most cases - future)]
    * In security endpoint defined Security input - bearer token, security output - user,
    *    error response - tuple of status code with error message object and wrapper.
    */
@@ -44,10 +45,12 @@ class TapirSecurity(authentication: TapirAuthentication)(implicit ec: ExecutionC
           oneOfDefaultVariant(jsonBody[com.example.errors.ErrorMessage].description("Default result").example(com.example.errors.ErrorMessage("Test error message")))
         )
       )
-      .serverSecurityLogic(authentication.authenticate(_).flatMap {
-        // define security logic here. For example, here is authentication, chained with authorization
-        either => foldEitherOfFuture(either.map(isAuthorized(_, roles))).map(_.flatten)
-      })
+      .serverSecurityLogic(token =>
+        ZioUtil.foldRunToFuture(TapirAuthentication.authenticate(token).flatMap { user =>
+          // define security logic here. For example, here is authentication, chained with authorization
+          isAuthorized(user, roles)
+        }.provide(authentication))
+      )
 
   /**
    * Authorization filter function - checks user for present roles.
@@ -55,6 +58,6 @@ class TapirSecurity(authentication: TapirAuthentication)(implicit ec: ExecutionC
    * @param roles restricted roles to check. If empty - skips authorization.
    * @return either error with Forbidden status code or user.
    */
-  def isAuthorized(user: User, roles: List[RoleType]): Future[Either[ErrorInfo, User]] =
-    Future.successful(if (roles.isEmpty || roles.contains(user.role)) Right(user) else Left(Forbidden("user is not allowed to use this endpoint")))
+  def isAuthorized(user: User, roles: List[RoleType]): ZIO[Any, ErrorInfo, User] =
+    if (roles.isEmpty || roles.contains(user.role)) ZIO.succeed(user) else ZIO.fail(Forbidden("user is not allowed to use this endpoint"))
 }

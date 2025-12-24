@@ -14,6 +14,8 @@ import java.sql.SQLException
  */
 object UserDao {
 
+  type UserRepository = UserDao.Service
+
   trait Service {
     def createUser(user: User): ZIO[Any, SQLException, Long]
     def updateUser(user: User): ZIO[Any, SQLException, Long]
