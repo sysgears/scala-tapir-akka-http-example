@@ -1,13 +1,12 @@
 package com.example.errors
 
 import java.util.UUID
-
 import com.typesafe.scalalogging.LazyLogging
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.generic.auto._
 import sttp.tapir._
 import sttp.tapir.server.akkahttp.AkkaHttpServerOptions
-import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
+import sttp.tapir.server.interceptor.decodefailure.{DecodeFailureHandler, DefaultDecodeFailureHandler}
 import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler.FailureMessages
 import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
@@ -31,7 +30,7 @@ class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
    * Contains customization for decode failure handler, exception handler and applied metrics interceptor
    */
   implicit val customServerOptions: AkkaHttpServerOptions = AkkaHttpServerOptions.customiseInterceptors
-    .decodeFailureHandler(ctx => {
+    .decodeFailureHandler(DecodeFailureHandler.apply(ctx => {
       ctx.failingInput match {
         // when defining how a decode failure should be handled, we need to describe the output to be used, and
         // a value for this output
@@ -40,10 +39,10 @@ class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
           val failureMessage = FailureMessages.failureMessage(ctx)
           logger.info(s"$failureMessage")
           // warning - log working incorrect when there are several endpoints with different methods
-          DefaultDecodeFailureHandler.default(ctx)
-        case _ => DefaultDecodeFailureHandler.default(ctx)
+          DefaultDecodeFailureHandler.respond(ctx)
+        case _ => DefaultDecodeFailureHandler.respond(ctx)
       }
-    })
+    }))
     .exceptionHandler(ExceptionHandler[Future] { ctx =>
       val exceptionId = UUID.randomUUID() // defining exception id for the exception to make search in logs easier.
       logger.error(s"Intercepted exception ${ctx.e} while processing request, exception id: $exceptionId")
