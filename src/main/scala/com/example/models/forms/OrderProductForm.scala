@@ -6,4 +6,4 @@ package com.example.models.forms
  * @param productId id of product to order.
  * @param quantity amount of products to order.
  */
-case class OrderProductForm(productId: Long, quantity: Int)
+case class OrderProductForm(productId: String, quantity: Int)

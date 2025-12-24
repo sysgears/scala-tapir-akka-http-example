@@ -17,6 +17,7 @@ object OrderDao {
 
   trait Service {
     def findForUser(userId: String): ZIO[Any, SQLException, List[Order]]
+    def find(orderId: String): ZIO[Any, SQLException, Option[Order]]
 
     /** Inserts order to database. */
     def insert(order: Order): ZIO[Any, SQLException, Long]
@@ -64,6 +65,8 @@ object OrderDao {
         /** Counts all orders. */
         override def countOrders(): ZIO[Any, SQLException, Long] =
           run(orders.size)
+
+        override def find(orderId: String): ZIO[Any, SQLException, Option[Order]] = run(orders.filter(_.id == lift(orderId))).map(_.headOption)
       }
     }
   }

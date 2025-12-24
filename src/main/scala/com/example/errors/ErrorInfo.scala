@@ -8,7 +8,7 @@ sealed trait ErrorInfo {
 }
 
 /** Represents http 404. */
-case class NotFound(msg: String) extends ErrorInfo
+case class NotFound(msg: String = "") extends ErrorInfo
 
 /** Represents http 401. */
 case class Unauthorized(msg: String) extends ErrorInfo

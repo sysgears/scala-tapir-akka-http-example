@@ -1,13 +1,16 @@
 package com.example.services
 
-import java.time.LocalDateTime
-
-import com.example.dao.{OrderDao, OrderProductDao, ProductDao}
-import com.example.models.{Order, OrderProduct, OrderRecord, OrderWithRecords}
+import com.example.dao.OrderDao.OrderRepository
+import com.example.dao.OrderProductDao.OrderProductRepository
+import com.example.dao.ProductDao.ProductRepository
+import com.example.errors.{BadRequest, ErrorInfo, InternalServerError, NotFound}
 import com.example.models.forms.CreateOrderForm
+import com.example.models.{Order, OrderProduct, OrderRecord, OrderWithRecords}
+import com.example.utils.Util
 import com.typesafe.scalalogging.LazyLogging
+import zio.{ZIO, ZLayer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.time.LocalDateTime
 
 /**
  * Service for the OrderController.
@@ -19,63 +22,107 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param orderProductDao dao for order-product relation
  * @param ec for futures.
  */
-class OrderService(orderDao: OrderDao,
-                   productDao: ProductDao,
-                   orderProductDao: OrderProductDao)(implicit ec: ExecutionContext) extends LazyLogging {
+object OrderService extends LazyLogging {
 
-  /**
-   * Creates new order and associate it to the user.
-   *
-   * @param userId user which made the order
-   * @param newOrder order itself.
-   * @return insert result for order's records.
-   */
-  def createOrder(userId: Long, newOrder: CreateOrderForm): Future[List[Long]] = {
-    val order = Order(0, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), newOrder.comment)
-    val products = newOrder.products.map(product => OrderProduct(0, 0, product.productId, product.quantity))
+  type OrderService = Service
+
+  trait Service {
+
+    /**
+     * Creates new order and associate it to the user.
+     *
+     * @param userId user which made the order
+     * @param newOrder order itself.
+     * @return insert result for order's records.
+     */
+    def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, List[Long]]
+
+    /**
+     * Extracts orders for the user without their details.
+     *
+     * @param userId user, which extracts their orders.
+     * @return orders for the user.
+     */
+    def findOrdersForUser(userId: String): ZIO[Any, ErrorInfo, List[Order]]
+
+    /**
+     * Extracts order details for the order.
+     *
+     * @param orderId order to extract records data.
+     * @return extended order with records, which contains order details.
+     */
+    def getOrderDetails(orderId: String): ZIO[Any, ErrorInfo, OrderWithRecords]
+  }
+
+  val live = ZLayer {
     for {
-      orderId <- orderDao.insert(order)
-      updatedProducts = products.map(_.copy(orderId = orderId))
-      insertResult <- orderProductDao.insertBatch(updatedProducts)
+      orderDao <- ZIO.service[OrderRepository]
+      productDao <- ZIO.service[ProductRepository]
+      orderProductDao <- ZIO.service[OrderProductRepository]
     } yield {
-      logger.debug(s"Order with id $orderId has been created.")
-      insertResult
-    }
-  }
-
-  /**
-   * Extracts orders for the user without their details.
-   *
-   * @param userId user, which extracts their orders.
-   * @return orders for the user.
-   */
-  def findOrdersForUser(userId: Long): Future[List[Order]] = {
-    logger.debug(s"Received request to extract orders for user with id $userId")
-    orderDao.findForUser(userId)
-  }
-
-  /**
-   * Extracts order details for the order.
-   *
-   * @param orderId order to extract records data.
-   * @return extended order with records, which contains order details.
-   */
-  def getOrderDetails(orderId: Long): Future[Option[OrderWithRecords]] = {
-    logger.trace(s"Received request to extract details for order with id $orderId")
-    orderDao.find(orderId).flatMap {
-      case Some(order) =>
-        for {
-          orderProducts <- orderProductDao.findByOrder(order.id)
-          products <- productDao.findByIds(orderProducts.map(_.productId).distinct)
-        } yield {
-          val extendedOrderProducts = orderProducts.map { orderProduct =>
-            val product = products.find(_.id == orderProduct.productId)
-            OrderRecord(orderProduct.id, orderProduct.orderId, product, orderProduct.quantity)
+      new Service {
+        override def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, List[Long]] = {
+          val order = Order(Util.generateUuid, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), newOrder.comment)
+          val products = newOrder.products.map(product => OrderProduct(order.id, product.productId, product.quantity))
+          (for {
+            _ <- orderDao.insert(order)
+            updatedProducts = products.map(_.copy(orderId = order.id))
+            insertResult <- orderProductDao.insertBatch(updatedProducts)
+          } yield {
+            logger.debug(s"Order with id ${order.id} has been created.")
+            insertResult
+          }).mapError {
+            error =>
+              logger.error(s"Intercepted error while creating order for user $userId, order id is $userId", error)
+              InternalServerError("Internal error")
           }
-          logger.debug(s"Extracted details for order with id $orderId, extracted order records size ${extendedOrderProducts.size}")
-          Some(OrderWithRecords(order, extendedOrderProducts))
         }
-      case None => Future.successful(None)
+
+        override def findOrdersForUser(userId: String): ZIO[Any, ErrorInfo, List[Order]] = {
+          logger.debug(s"Received request to extract orders for user with id $userId")
+          orderDao.findForUser(userId).mapError {
+            error =>
+              logger.error(s"Intercepted error from getting order details action, order id is $userId", error)
+              InternalServerError("Internal error")
+          }
+        }
+
+
+        /**
+         * Extracts order details for the order.
+         *
+         * @param orderId order to extract records data.
+         * @return extended order with records, which contains order details.
+         */
+        def getOrderDetails(orderId: String): ZIO[Any, ErrorInfo, OrderWithRecords] = {
+          logger.trace(s"Received request to extract details for order with id $orderId")
+          Util.emptyStringToOption(orderId) match {
+            case Some(value) =>
+              orderDao.find(value).flatMap {
+                case Some(order) =>
+                  for {
+                    orderItems <- orderProductDao.findByOrder(order.id)
+                    items <- productDao.findByIds(orderItems.map(_.productId).distinct)
+                  } yield {
+                    val extendedOrderProducts = orderItems.map { orderProduct =>
+                      val product = items.find(_.id == orderProduct.productId)
+                      OrderRecord(product, orderProduct.quantity)
+                    }
+                    logger.debug(s"Extracted details for order with id $orderId, extracted order records size ${extendedOrderProducts.size}")
+                    OrderWithRecords(order, extendedOrderProducts)
+                  }
+                case None => ZIO.fail(NotFound())
+              }.mapError {
+                case error: ErrorInfo => error // pass this one
+                case error =>
+                  logger.error(s"Intercepted error from getting order details action, order id is $orderId", error)
+                  InternalServerError("Internal error")
+              }
+            case None => ZIO.fail(BadRequest("Order id is empty"))
+          }
+
+        }
+      }
     }
   }
 }

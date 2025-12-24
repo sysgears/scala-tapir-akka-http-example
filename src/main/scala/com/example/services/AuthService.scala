@@ -1,17 +1,15 @@
 package com.example.services
 
-import java.time.LocalDateTime
-import com.example.auth.JwtService
-import com.example.dao.UserDao
+import com.example.auth.Jwt.JwtService
 import com.example.dao.UserDao.UserRepository
-import com.example.errors.{BadRequest, Conflict, ErrorInfo, ErrorMessage}
-import com.example.models.{Roles, Token, User}
+import com.example.errors._
 import com.example.models.forms.{SignInForm, SignUpForm}
-import com.example.utils.CryptUtils
+import com.example.models.{Roles, Token, User}
+import com.example.utils.{CryptUtils, Util}
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.time.LocalDateTime
 
 /**
  * Service for the AuthController.
@@ -22,12 +20,26 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param jwtService contains functions, which works with jwt token.
  * @param ec for futures.
  */
-object AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: ExecutionContext) extends LazyLogging {
+object AuthService extends LazyLogging {
 
   type Authentication = Service
 
   trait Service {
+    /**
+     * Signs in user.
+     * @param form contains login and password for sign in.
+     * @return either error message or token class with jwt token.
+     */
     def signIn(form: SignInForm): ZIO[Any, ErrorInfo, Token]
+
+    /**
+     * Registers user.
+     *
+     * Id for the new user is created here to keep determinism for database
+     *
+     * @param signUpForm contains data for new user registration.
+     * @return either error message inside required response class or just signal to return positive response.
+     */
     def signUp(signUpForm: SignUpForm): ZIO[Any, ErrorInfo, Unit]
   }
 
@@ -37,53 +49,49 @@ object AuthService(userDao: UserDao, jwtService: JwtService)(implicit ec: Execut
   val live = ZLayer {
     for {
       userDao <- ZIO.service[UserRepository]
-      jwtService <-
+      jwtService <- ZIO.service[JwtService]
+    } yield {
+      new Service {
+        override def signIn(form: SignInForm): ZIO[Any, ErrorInfo, Token] =
+          userDao.findByEmail(form.login).mapError { error =>
+            logger.error("Intercepted error from sign in action", error)
+            InternalServerError("Internal error")
+          }.flatMap {
+            case Some(user) =>
+              if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
+                logger.debug(s"User with id ${user.id} has logged in")
+                jwtService.generateJwt(user.id).map(Token(_))
+              } else {
+                ZIO.fail(Unauthorized("Login or password is incorrect. Please, try again"))
+              }
+            case None => ZIO.fail(Unauthorized("Login or password is incorrect. Please, try again"))
+          }
 
-    }
-  }
-  /**
-   * Signs in user.
-   * @param form contains login and password for sign in.
-   * @return either error message or token class with jwt token.
-   */
-  def signIn(form: SignInForm): Future[Either[ErrorMessage, Token]] = {
-    userDao.findByEmail(form.login).map {
-      case Some(user) =>
-        if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
-          logger.debug(s"User with id ${user.id} has logged in")
-          val jwtToken = jwtService.generateJwt(user.id)
-          Right(Token(jwtToken))
-        } else {
-          Left(ErrorMessage("Login or password is incorrect. Please, try again"))
+        def signUp(signUpForm: SignUpForm): ZIO[Any, ErrorInfo, Unit] = {
+          val isValid = signUpForm.isValid // sign up form validation
+          isValid match {
+            case Left(message) => ZIO.fail(BadRequest(message))
+            case Right(_) =>
+              userDao.findByEmail(signUpForm.email).flatMap {
+                case Some(_) =>
+                  ZIO.fail(Conflict("User with this email already exists"))
+                case None =>
+                  val newUser = User(Util.generateUuid, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
+                    CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
+                    signUpForm.address, Roles.User, LocalDateTime.now)
+                  userDao.createUser(newUser).map { _ =>
+                    logger.debug(s"User with email ${newUser.email} has been registered.")
+                    ()
+                  }
+              }.mapError {
+                case error: ErrorInfo => error // pass this one
+                case error =>
+                  logger.error("Intercepted error from sign up action", error)
+                  InternalServerError("Internal error")
+              }
+          }
         }
-      case None => Left(ErrorMessage("Login or password is incorrect. Please, try again"))
+      }
     }
   }
-
-  /**
-   * Registers user.
-   *
-   * @param signUpForm contains data for new user registration.
-   * @return either error message inside required response class or just signal to return positive response.
-   */
-  def signUp(signUpForm: SignUpForm): Future[Either[ErrorInfo, Unit]] = {
-    val isValid = signUpForm.isValid // sign up form validation
-    isValid match {
-      case Left(message) => Future.successful(Left(BadRequest(message)))
-      case Right(_) =>
-        userDao.findByEmail(signUpForm.email).flatMap {
-          case Some(_) =>
-            Future.successful(Left(Conflict("User with this email is already exists")))
-          case None =>
-            val newUser = User(0, signUpForm.name, signUpForm.phoneNumber, signUpForm.email,
-              CryptUtils.createBcryptHash(signUpForm.password), signUpForm.zip, signUpForm.city,
-              signUpForm.address, Roles.User, LocalDateTime.now)
-            userDao.createUser(newUser).map { _ =>
-              logger.debug(s"User with email ${newUser.email} has registered.")
-              Right(())
-            }
-        }
-    }
-  }
-
 }
