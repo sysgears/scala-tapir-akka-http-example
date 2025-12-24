@@ -1,67 +1,71 @@
 package com.example.dao
 
 import com.example.models.Order
-import io.getquill.NamingStrategy
-import io.getquill.context.jdbc.JdbcContext
-import io.getquill.context.sql.idiom.SqlIdiom
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
+import zio.{ZIO, ZLayer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.sql.SQLException
 
 /**
  * Dao for orders.
  *
- * @param context for running queries in database.
- * @param ec for running queries asynchronously.
  */
-class OrderDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit ec: ExecutionContext) {
+object OrderDao {
 
-  import context._
+  type OrderRepository = OrderDao.Service
 
-  /**
-   * Query schema for orders.
-   */
-  private val orders = quote {
-    querySchema[Order]("orders")
+  trait Service {
+    def findForUser(userId: String): ZIO[Any, SQLException, List[Order]]
+
+    /** Inserts order to database. */
+    def insert(order: Order): ZIO[Any, SQLException, Long]
+    def update(order: Order): ZIO[Any, SQLException, Long]
+    def remove(orderId: String): ZIO[Any, SQLException, Long]
+    def updateStatus(orderId: String, newStatus: String): ZIO[Any, SQLException, Long]
+
+    /** Retrieves paginated orders. */
+    def findPaginated(take: Int, offset: Int): ZIO[Any, SQLException, List[Order]]
+
+    /** Counts all orders. */
+    def countOrders(): ZIO[Any, SQLException, Long]
   }
 
-  /** Inserts order to database and returns generated id of new order. */
-  def insert(order: Order): Future[Long] = Future {
-    run(orders.insertValue(lift(order)).returningGenerated(_.id))
-  }
+  val live = ZLayer {
+    for {
+      context <- ZIO.service[Quill.Postgres[SnakeCase]]
+    } yield {
+      new Service {
+        import context._
 
-  /** Updates order. */
-  def update(order: Order): Future[Long] = Future {
-    run(orders.filter(_.id == lift(order.id)).updateValue(lift(order)))
-  }
+        /**
+         * Query schema for orders.
+         */
+        private val orders = quote {
+          querySchema[Order]("orders")
+        }
 
-  /** Updates status for order. */
-  def updateStatus(orderId: Long, newStatus: String): Future[Long] = Future {
-    run(orders.filter(_.id == lift(orderId)).update(_.status -> lift(newStatus))) // example of updating some field for object in db.
-  }
+        override def findForUser(userId: String): ZIO[Any, SQLException, List[Order]] = run(orders.filter(_.userId == lift(userId)))
 
-  /** Removed order from database. */
-  def remove(orderId: Long): Future[Long] = Future {
-    run(orders.filter(_.id == lift(orderId)).delete)
-  }
+        override def insert(order: Order): ZIO[Any, SQLException, Long] = run(orders.insertValue(lift(order)))
 
-  /** Retrieves order by it's id. */
-  def find(orderId: Long): Future[Option[Order]] = Future {
-    run(orders.filter(_.id == lift(orderId))).headOption
-  }
+        override def update(order: Order): ZIO[Any, SQLException, Long] = run(orders.filter(_.id == lift(order.id)).updateValue(lift(order)))
 
-  /** Retrieves orders for user */
-  def findForUser(userId: Long): Future[List[Order]] = Future {
-    run(orders.filter(_.userId == lift(userId)))
-  }
+        override def remove(orderId: String): ZIO[Any, SQLException, Long] =
+          run(orders.filter(_.id == lift(orderId)).delete)
 
-  /** Retrieves paginated orders. */
-  def findPaginated(take: Int, offset: Int): Future[List[Order]] = Future {
-    run(orders.drop(lift(offset)).take(lift(take)))
-  }
+        override def updateStatus(orderId: String, newStatus: String): ZIO[Any, SQLException, Long] =
+          run(orders.filter(_.id == lift(orderId)).update(_.status -> lift(newStatus))) // example of updating some field for object in db.
 
-  /** Counts all orders. */
-  def countOrders(): Future[Long] = Future {
-    run(orders.size)
+        /** Retrieves paginated orders. */
+        override def findPaginated(take: Int, offset: Int): ZIO[Any, SQLException, List[Order]] =
+          run(orders.drop(lift(offset)).take(lift(take)))
+
+        /** Counts all orders. */
+        override def countOrders(): ZIO[Any, SQLException, Long] =
+          run(orders.size)
+      }
+    }
   }
 
 }

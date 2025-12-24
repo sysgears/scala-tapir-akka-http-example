@@ -3,7 +3,7 @@ package com.example.models
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 /** User without password and role. For endpoint response usage. */
-case class ShortUser(id: Long,
+case class ShortUser(id: String,
                      name: String,
                      phoneNumber: String,
                      email: String,

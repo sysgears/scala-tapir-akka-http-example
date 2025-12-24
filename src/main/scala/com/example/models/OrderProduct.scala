@@ -1,4 +1,4 @@
 package com.example.models
 
 /** Order-product relation. */
-case class OrderProduct(id: Long, orderId: Long, productId: Long, quantity: Int)
+case class OrderProduct(orderId: String, productId: String, quantity: Int)

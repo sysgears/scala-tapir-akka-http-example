@@ -3,63 +3,60 @@ package com.example.dao
 import com.example.models.Roles.RoleType
 import com.example.models.{Roles, User}
 import io.getquill
-import io.getquill.NamingStrategy
-import io.getquill.context.jdbc.JdbcContext
-import io.getquill.context.sql.idiom.SqlIdiom
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
+import zio.{ZIO, ZLayer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.sql.SQLException
 
 /**
  * Dao for user.
- *
- * @param context important stuff. Uses for connection to database.
- * @param ec for async work.
  */
-class UserDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit ec: ExecutionContext) {
+object UserDao {
 
-  import context._
-
-  /** Enum values mapping for the database. */
-  implicit val encodeRole = getquill.MappedEncoding[RoleType, Int](_.id)
-  implicit val decodeRole = getquill.MappedEncoding[Int, RoleType](roleId => Roles.withId(roleId))
-
-  /** Query schema. Closest analogue - table in Slick. */
-  private val users = quote {
-    querySchema[User]("users")
+  trait Service {
+    def createUser(user: User): ZIO[Any, SQLException, Long]
+    def updateUser(user: User): ZIO[Any, SQLException, Long]
+    def deleteUser(userId: String): ZIO[Any, SQLException, Long]
+    def find(userId: String): ZIO[Any, SQLException, Option[User]]
+    def findByEmail(email: String): ZIO[Any, SQLException, Option[User]]
+    def findByIds(userIds: Seq[String]): ZIO[Any, SQLException, List[User]]
   }
 
-  /** Creates user and returns generated id. */
-  def createUser(user: User): Future[Long] = Future {
-    run(users.insertValue(lift(user)).returningGenerated(_.id))
-  }
+  val live = ZLayer {
+    for {
+      context <- ZIO.service[Quill.Postgres[SnakeCase]]
+    } yield {
+      new Service {
+        import context._
 
-  /**
-   * Updates user.
-   *
-   * @param user user to update
-   * @return update result.
-   */
-  def updateUser(user: User): Future[Long] = Future {
-    run(users.filter(_.id == lift(user.id)).updateValue(lift(user)))
-  }
+        /** Enum values mapping for the database. */
+        implicit val encodeRole = getquill.MappedEncoding[RoleType, Int](_.id)
+        implicit val decodeRole = getquill.MappedEncoding[Int, RoleType](roleId => Roles.withId(roleId))
 
-  /** Removes user. */
-  def deleteUser(userId: Long): Future[Long] = Future {
-    run(users.filter(_.id == lift(userId)).delete)
-  }
+        /** Query schema. Closest analogue - table in Slick. */
+        private val users = quote {
+          querySchema[User]("users")
+        }
 
-  /** Searches user by id. */
-  def find(userId: Long): Future[Option[User]] = Future {
-    run(users.filter(_.id == lift(userId))).headOption
-  }
+        override def createUser(user: User): ZIO[Any, SQLException, Long] =
+          run(users.insertValue(lift(user)))
 
-  /** Searches user by email. */
-  def findByEmail(email: String): Future[Option[User]] = Future {
-    run(users.filter(_.email == lift(email))).headOption
-  }
+        override def updateUser(user: User): ZIO[Any, SQLException, Long] =
+          run(users.filter(_.id == lift(user.id)).updateValue(lift(user)))
 
-  /** Searches users by ids. */
-  def findByIds(userIds: Seq[Long]): Future[List[User]] = Future {
-    run(users.filter(user => liftQuery(userIds).contains(user.id)))
+        override def deleteUser(userId: String): ZIO[Any, SQLException, Long] =
+          run(users.filter(_.id == lift(userId)).delete)
+
+        override def find(userId: String): ZIO[Any, SQLException, Option[User]] =
+          run(users.filter(_.id == lift(userId))).map(_.headOption)
+
+        override def findByEmail(email: String): ZIO[Any, SQLException, Option[User]] =
+          run(users.filter(_.email == lift(email))).map(_.headOption)
+
+        override def findByIds(userIds: Seq[String]): ZIO[Any, SQLException, List[User]] =
+          run(users.filter(user => liftQuery(userIds).contains(user.id)))
+      }
+    }
   }
 }

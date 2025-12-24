@@ -1,60 +1,64 @@
 package com.example.dao
 
 import com.example.models.OrderProduct
-import io.getquill.NamingStrategy
-import io.getquill.context.jdbc.JdbcContext
-import io.getquill.context.sql.idiom.SqlIdiom
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
+import zio.{ZIO, ZLayer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.sql.SQLException
 
 /**
- * Dao for order-product relationship.
+ * Repository for OrderProduct table
  *
- * @param context for running queries in database.
- * @param ec for running queries asynchronously.
+ * This is case of handling order-item relation for SQL databases.
+ * In case of NoSQL, like MongoDB, you would keep information about item and quantity within order index
+ * ElasticSearch would be a good spot too, but you still need to pair with a database. Some databases are not suitable for such relation, like Cassandra
  */
-class OrderProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit ec: ExecutionContext) {
+object OrderProductDao {
 
-  import context._
+  type OrderProductRepository = OrderProductDao.Service
 
-  /**
-   * Query schema for orderProducts.
-   */
-  private val orderItems = quote {
-    querySchema[OrderProduct]("order_products")
+  trait Service {
+    def insert(orderProduct: OrderProduct): ZIO[Any, SQLException, Long]
+    def update(orderProduct: OrderProduct): ZIO[Any, SQLException, Long]
+    def remove(orderId: String, productId: String): ZIO[Any, SQLException, Long]
+
+    def findByOrders(orderIds: Seq[String]): ZIO[Any, SQLException, List[OrderProduct]]
+    def findByOrder(orderId: String): ZIO[Any, SQLException, List[OrderProduct]]
+    def insertBatch(orderProductList: List[OrderProduct]): ZIO[Any, SQLException, List[Long]]
+    def removeByOrder(orderId: String): ZIO[Any, SQLException, List[OrderProduct]]
   }
 
-  /** Creates orderProduct in database and returns generated id. */
-  def insert(orderProduct: OrderProduct): Future[Long] = Future {
-    run(orderItems.insertValue(lift(orderProduct)).returningGenerated(_.id))
-  }
+  val live = ZLayer {
+    for {
+      context <- ZIO.service[Quill.Postgres[SnakeCase]]
+    } yield {
+      new Service {
+        import context._
+        private val orderItems = quote {
+          querySchema[OrderProduct]("order_products")
+        }
 
-  /** Updates orderProduct relation. */
-  def update(orderProduct: OrderProduct): Future[Long] = Future {
-    run(orderItems.filter(_.id == lift(orderProduct.id)).updateValue(lift(orderProduct)))
-  }
+        override def insert(orderProduct: OrderProduct): ZIO[Any, SQLException, Long] = run(orderItems.insertValue(lift(orderProduct)))
 
-  /** Removes orderProduct relation. */
-  def remove(orderProductId: Long): Future[Long] = Future {
-    run(orderItems.filter(_.id == lift(orderProductId)).delete)
-  }
+        override def update(orderProduct: OrderProduct): ZIO[Any, SQLException, Long] =
+          run(orderItems.filter(orderItem => orderItem.orderId == lift(orderProduct.orderId) && orderItem.productId == lift(orderProduct.productId)).map(_.quantity).updateValue(lift(orderProduct.quantity)))
 
-  /** Retrieves order-product relations by order id list. */
-  def findByOrders(orderIds: Seq[Long]): Future[List[OrderProduct]] = Future {
-    run(orderItems.filter(orderItem => liftQuery(orderIds).contains(orderItem.orderId))) // example of batch extraction. liftQuery is required.
-  }
+        override def remove(orderId: String, productId: String): ZIO[Any, SQLException, Long] =
+          run(orderItems.filter(orderItem => orderItem.orderId == lift(orderId) && orderItem.productId == lift(productId)).delete)
 
-  /** Retrieves order-product relations by order id. */
-  def findByOrder(orderId: Long): Future[List[OrderProduct]] = Future {
-    run(orderItems.filter(_.orderId == lift(orderId)))
-  }
+        override def findByOrders(orderIds: Seq[String]): ZIO[Any, SQLException, List[OrderProduct]] =
+          run(orderItems.filter(orderItem => liftQuery(orderIds).contains(orderItem.orderId))) // example of batch extraction. liftQuery is required.
 
-  def removeByOrder(orderId: Long): Future[List[OrderProduct]] = Future {
-    run(orderItems.filter(_.orderId == lift(orderId)))
-  }
+        override def findByOrder(orderId: String): ZIO[Any, SQLException, List[OrderProduct]] =
+          run(orderItems.filter(_.orderId == lift(orderId)))
 
-  /** Batch order-product relation insert and returns generated id for each inserted entry. */
-  def insertBatch(orderProductList: List[OrderProduct]): Future[List[Long]] = Future {
-    run(liftQuery(orderProductList).foreach(entry => orderItems.insertValue(entry).returningGenerated(r => r.id))) // example of batch insert.
+        override def insertBatch(orderProductList: List[OrderProduct]): ZIO[Any, SQLException, List[Long]] =
+          run(liftQuery(orderProductList).foreach(entry => orderItems.insertValue(entry))) // example of batch insert.
+
+        override def removeByOrder(orderId: String): ZIO[Any, SQLException, List[OrderProduct]] =
+          run(orderItems.filter(_.orderId == lift(orderId)))
+      }
+    }
   }
 }

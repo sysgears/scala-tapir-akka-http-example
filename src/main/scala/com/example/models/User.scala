@@ -6,7 +6,7 @@ import com.example.models.Roles.RoleType
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 /** Represents user. */
-case class User(id: Long,
+case class User(id: String,
                 name: String,
                 phoneNumber: String,
                 email: String,

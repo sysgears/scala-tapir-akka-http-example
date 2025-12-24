@@ -1,61 +1,56 @@
 package com.example.dao
 
 import com.example.models.Product
-import io.getquill.NamingStrategy
-import io.getquill.context.jdbc.JdbcContext
-import io.getquill.context.sql.idiom.SqlIdiom
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
+import zio.{ZIO, ZLayer}
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.sql.SQLException
 
 /**
  * Dao for products.
- *
- * @param context runs queries in database
- * @param ec for running queries asynchronously.
  */
-class ProductDao(context: JdbcContext[_ <: SqlIdiom, _ <: NamingStrategy])(implicit ec: ExecutionContext) {
+object ProductDao {
 
-  import context._
+  type ProductRepository = ProductDao.Service
 
-  /**
-   * Query schema for products.
-   */
-  private val products = quote {
-    querySchema[Product]("products")
+  trait Service {
+    def insert(product: Product): ZIO[Any, SQLException, Long]
+    def update(product: Product): ZIO[Any, SQLException, Long]
+    def remove(productId: String): ZIO[Any, SQLException, Long]
+    def findAll(): ZIO[Any, SQLException, List[Product]]
+    def findPaginated(take: Int, offset: Int): ZIO[Any, SQLException, List[Product]]
+    def countProducts(): ZIO[Any, SQLException, Long]
+    def findByIds(productIds: Seq[String]): ZIO[Any, SQLException, List[Product]]
   }
 
-  /** Creates new product and returns generated id. */
-  def insert(product: Product): Future[Long] = Future {
-    run(products.insertValue(lift(product)).returningGenerated(_.id))
-  }
+  val live = ZLayer {
+    for {
+      context <- ZIO.service[Quill.Postgres[SnakeCase]]
+    } yield {
+      new Service {
+        import context._
+        /**
+         * Query schema for products.
+         */
+        private val products = quote {
+          querySchema[Product]("products")
+        }
+        override def insert(product: Product): ZIO[Any, SQLException, Long] = run(products.insertValue(lift(product)))
 
-  /** Updates product. */
-  def update(product: Product): Future[Long] = Future {
-    run(products.filter(_.id == lift(product.id)).updateValue(lift(product)))
-  }
+        override def update(product: Product): ZIO[Any, SQLException, Long] = run(products.filter(_.id == lift(product.id)).updateValue(lift(product)))
 
-  /** Removes product. */
-  def remove(productId: Long): Future[Long] = Future {
-    run(products.filter(_.id == lift(productId)).delete)
-  }
+        override def remove(productId: String): ZIO[Any, SQLException, Long] = run(products.filter(_.id == lift(productId)).delete)
 
-  /** Retrieves all products. */
-  def findAll(): Future[List[Product]] = Future {
-    run(products)
-  }
+        override def findAll(): ZIO[Any, SQLException, List[Product]] = run(products)
 
-  /** Retrieves products paginated. */
-  def findPaginated(take: Int, offset: Int): Future[List[Product]] = Future {
-    run(products.drop(lift(offset)).take(lift(take)))
-  }
+        override def findPaginated(take: Int, offset: Int): ZIO[Any, SQLException, List[Product]] = run(products.drop(lift(offset)).take(lift(take)))
 
-  /** Counts products in database. */
-  def countProducts(): Future[Long] = Future {
-    run(products.size)
-  }
+        override def countProducts(): ZIO[Any, SQLException, Long] = run(products.size)
 
-  /** Retrieves products for ids. */
-  def findByIds(productIds: Seq[Long]): Future[List[Product]] = Future {
-    run(products.filter(product => liftQuery(productIds).contains(product.id)))
+        override def findByIds(productIds: Seq[String]): ZIO[Any, SQLException, List[Product]] =
+          run(products.filter(product => liftQuery(productIds).contains(product.id)))
+      }
+    }
   }
 }
