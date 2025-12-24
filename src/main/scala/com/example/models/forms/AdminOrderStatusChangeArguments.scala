@@ -13,7 +13,7 @@ import sttp.tapir.EndpointIO.annotations.{description, endpointInput, path, quer
 case class AdminOrderStatusChangeArguments(
                                             @path
                                             @description("id of order to update status")
-                                            orderId: Long,
+                                            orderId: String,
                                             @query
                                             @description("new status for the order.")
                                             newStatus: String
