@@ -4,6 +4,7 @@ import com.example.errors.{BadRequest, Conflict, ErrorMessage}
 import com.example.models.Token
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.services.AuthService
+import com.example.services.AuthService.Authentication
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.mockito.ArgumentMatchers.any
@@ -16,15 +17,16 @@ import io.circe.generic.auto._
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 import sttp.tapir.server.stub.TapirStubInterpreter
+import zio.{ZIO, ZLayer}
 
 import scala.concurrent.Future
 
 class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
 
   it should "log in correctly" in {
-    val authService = mock[AuthService]
-    when(authService.signIn(any[SignInForm])).thenReturn(Future(Right(Token("password"))))
-    val authController = new AuthController(authService)
+    val authService = mock[Authentication]
+    when(authService.signIn(any[SignInForm])).thenReturn(ZIO.succeed(Token("password")))
+    val authController = new AuthController(ZLayer.succeed(authService))
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
       .whenServerEndpoint(authController.signInEndpoint)
@@ -43,9 +45,9 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggin
   }
 
   it should "return badRequest when service returns failure result" in {
-    val authService = mock[AuthService]
-    when(authService.signIn(any[SignInForm])).thenReturn(Future(Left(ErrorMessage("Login or password is incorrect. Please, try again"))))
-    val authController = new AuthController(authService)
+    val authService = mock[Authentication]
+    when(authService.signIn(any[SignInForm])).thenReturn(ZIO.fail(ErrorMessage("Login or password is incorrect. Please, try again")))
+    val authController = new AuthController(ZLayer.succeed(authService))
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
       .whenServerEndpoint(authController.signInEndpoint)
@@ -67,9 +69,9 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggin
   }
 
   it should "return conflict for sign up when service returns conflict errorInfo" in {
-    val authService = mock[AuthService]
-    when(authService.signUp(any[SignUpForm])).thenReturn(Future.successful(Left(Conflict("User with this email is already exists"))))
-    val authController = new AuthController(authService)
+    val authService = mock[Authentication]
+    when(authService.signUp(any[SignUpForm])).thenReturn(ZIO.fail(Conflict("User with this email is already exists")))
+    val authController = new AuthController(ZLayer.succeed(authService))
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
       .whenServerEndpoint(authController.signUpEndpoint)
@@ -91,9 +93,9 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggin
   }
 
   it should "return badRequest for sign up when service returns badRequest errorInfo" in {
-    val authService = mock[AuthService]
-    when(authService.signUp(any[SignUpForm])).thenReturn(Future.successful(Left(BadRequest("BadRequest message"))))
-    val authController = new AuthController(authService)
+    val authService = mock[Authentication]
+    when(authService.signUp(any[SignUpForm])).thenReturn(ZIO.fail(BadRequest("BadRequest message")))
+    val authController = new AuthController(ZLayer.succeed(authService))
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
       .whenServerEndpoint(authController.signUpEndpoint)
@@ -115,9 +117,9 @@ class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggin
   }
 
   it should "return Created when everything is okay" in {
-    val authService = mock[AuthService]
-    when(authService.signUp(any[SignUpForm])).thenReturn(Future.successful(Right()))
-    val authController = new AuthController(authService)
+    val authService = mock[Authentication]
+    when(authService.signUp(any[SignUpForm])).thenReturn(ZIO.unit)
+    val authController = new AuthController(ZLayer.succeed(authService))
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
       .whenServerEndpoint(authController.signUpEndpoint)

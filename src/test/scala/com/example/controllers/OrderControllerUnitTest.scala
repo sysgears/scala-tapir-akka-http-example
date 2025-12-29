@@ -1,12 +1,15 @@
 package com.example.controllers
 
-import java.time.LocalDateTime
+import com.example.auth.TapirAuthentication.TapirAuth
 
+import java.time.LocalDateTime
 import com.example.auth.{TapirAuthentication, TapirSecurity}
-import com.example.errors.BadRequest
+import com.example.errors.{BadRequest, NotFound}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles, User}
 import com.example.services.OrderService
+import com.example.services.OrderService.OrderService
+import com.example.utils.Util
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.mockito.ArgumentMatchers.any
@@ -19,6 +22,7 @@ import io.circe.generic.auto._
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 import sttp.tapir.server.stub.TapirStubInterpreter
+import zio.{ZIO, ZLayer}
 
 import scala.concurrent.Future
 
@@ -26,17 +30,18 @@ import scala.concurrent.Future
  * Contains example of mocking authentication.
  */
 class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
-  val testUser: User = User(1, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
+  val testUser: User = User(Util.generateUuid, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
 
-  val authentication: TapirAuthentication = mock[TapirAuthentication]
-  when(authentication.authenticate(any[String])).thenReturn(Future.successful(Right(testUser)))
+  val authentication: TapirAuth = mock[TapirAuth]
+  when(authentication.authenticate(any[String])).thenReturn(ZIO.succeed(testUser))
 
   it should "Return order list for user" in {
     // preparations
     val orderService = mock[OrderService]
-    val orderList = List(Order(1, 1, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"))
-    when(orderService.findOrdersForUser(1)).thenReturn(Future.successful(orderList))
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    val userId = Util.generateUuid
+    val orderList = List(Order(Util.generateUuid, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"))
+    when(orderService.findOrdersForUser(userId)).thenReturn(ZIO.succeed(orderList))
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -60,10 +65,12 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
   it should "Return order details" in {
     // preparations
     val orderService = mock[OrderService]
-    val orderResponse = OrderWithRecords(Order(1, 1, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"),
-      List(OrderRecord(1, 1, Some(Product(1, "test product", "test description", 5.0)), 2)))
-    when(orderService.getOrderDetails(1)).thenReturn(Future.successful(Some(orderResponse)))
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    val userId = Util.generateUuid
+    val orderId = Util.generateUuid
+    val orderResponse = OrderWithRecords(Order(orderId, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"),
+      List(OrderRecord(Some(Product(Util.generateUuid, "test product", "test description", 5.0)), 2)))
+    when(orderService.getOrderDetails(orderId)).thenReturn(ZIO.succeed(orderResponse))
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -73,7 +80,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
     // when
     val response = basicRequest
-      .get(uri"http://localhost:9000/orders/1")
+      .get(uri"http://localhost:9000/orders/$orderId")
       .header("Authorization", "Bearer password")
       .send(backendStub)
 
@@ -87,8 +94,9 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
   it should "Return NotFound to order details request for not-existing order" in {
     // preparations
     val orderService = mock[OrderService]
-    when(orderService.getOrderDetails(2)).thenReturn(Future.successful(None))
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    val orderId = Util.generateUuid
+    when(orderService.getOrderDetails(orderId)).thenReturn(ZIO.fail(NotFound()))
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -98,7 +106,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
     // when
     val response = basicRequest
-      .get(uri"http://localhost:9000/orders/2")
+      .get(uri"http://localhost:9000/orders/$orderId")
       .header("Authorization", "Bearer password")
       .send(backendStub)
 
@@ -112,8 +120,8 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
   it should "Create new order for the user" in {
     // preparations
     val orderService = mock[OrderService]
-    when(orderService.createOrder(any[Long], any[CreateOrderForm])).thenReturn(Future.successful(List(1,2)))
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    when(orderService.createOrder(any[String], any[CreateOrderForm])).thenReturn(ZIO.succeed(List(1,2)))
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -124,7 +132,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
     // when
     val response = basicRequest
       .post(uri"http://localhost:9000/orders")
-      .body(CreateOrderForm(List(OrderProductForm(1, 5)), "Some delivery comment").asJson.noSpaces)
+      .body(CreateOrderForm(List(OrderProductForm(Util.generateUuid, 5)), "Some delivery comment").asJson.noSpaces)
       .header("Authorization", "Bearer password")
       .send(backendStub)
 
@@ -138,8 +146,8 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
   it should "Reject creating new user because some value about product is invalid" in {
     // preparations
     val orderService = mock[OrderService]
-    when(orderService.createOrder(any[Long], any[CreateOrderForm])).thenReturn(Future.successful(List(1, 2)))
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    when(orderService.createOrder(any[String], any[CreateOrderForm])).thenReturn(ZIO.succeed(List(1, 2)))
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -150,7 +158,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
     // when
     val response = basicRequest
       .post(uri"http://localhost:9000/orders")
-      .body(CreateOrderForm(List(OrderProductForm(-1, 5)), "Some delivery comment").asJson.noSpaces)
+      .body(CreateOrderForm(List(OrderProductForm("", 5)), "Some delivery comment").asJson.noSpaces)
       .header("Authorization", "Bearer password")
       .send(backendStub)
 

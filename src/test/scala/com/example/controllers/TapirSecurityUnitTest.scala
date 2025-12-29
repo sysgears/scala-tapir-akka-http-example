@@ -1,11 +1,13 @@
 package com.example.controllers
 
-import java.time.LocalDateTime
+import com.example.auth.TapirAuthentication.TapirAuth
 
+import java.time.LocalDateTime
 import com.example.auth.{TapirAuthentication, TapirSecurity}
 import com.example.errors.{Forbidden, Unauthorized}
 import com.example.models.{Roles, User}
-import com.example.services.OrderService
+import com.example.services.OrderService.OrderService
+import com.example.utils.Util
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
 import org.mockito.ArgumentMatchers.any
@@ -18,6 +20,7 @@ import io.circe.generic.auto._
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 import sttp.tapir.server.stub.TapirStubInterpreter
+import zio.{ZIO, ZLayer}
 
 import scala.concurrent.Future
 
@@ -30,15 +33,15 @@ import scala.concurrent.Future
  */
 class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
 
-  val testUser: User = User(1, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
+  val testUser: User = User(Util.generateUuid, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
 
   /** Case where user with wrong role is trying get endpoint for another user role. */
   it should "Reject user with wrong role" in {
     // preparations
-    val authentication = mock[TapirAuthentication]
-    when(authentication.authenticate(any[String])).thenReturn(Future.successful(Right(testUser.copy(role = Roles.Admin))))
+    val authentication = mock[TapirAuth]
+    when(authentication.authenticate(any[String])).thenReturn(ZIO.succeed(testUser.copy(role = Roles.Admin)))
     val orderService = mock[OrderService]
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -63,10 +66,10 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
   /** Case when user trying access endpoint with invalid jwt token. */
   it should "Reject user with wrong or expired jwt token" in {
     // preparations
-    val authentication = mock[TapirAuthentication]
-    when(authentication.authenticate(any[String])).thenReturn(Future.successful(Left(Unauthorized("Token is expired. You need to log in first"))))
+    val authentication = mock[TapirAuth]
+    when(authentication.authenticate(any[String])).thenReturn(ZIO.fail(Unauthorized("Token is expired. You need to log in first")))
     val orderService = mock[OrderService]
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
@@ -91,9 +94,9 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
   /** Case where user is trying access to endpoint without jwt token in header. */
   it should "Reject user without jwt token" in {
     // preparations
-    val authentication = mock[TapirAuthentication]
+    val authentication = mock[TapirAuth]
     val orderService = mock[OrderService]
-    val orderController = new OrderController(new TapirSecurity(authentication), orderService)
+    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
     val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
