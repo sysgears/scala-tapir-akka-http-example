@@ -6,6 +6,7 @@ import com.example.dao.ProductDao.ProductRepository
 import com.example.errors.{BadRequest, ErrorInfo, InternalServerError, NotFound}
 import com.example.models.forms.CreateOrderForm
 import com.example.models.{Order, OrderProduct, OrderRecord, OrderWithRecords}
+import com.example.services
 import com.example.utils.Util
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
@@ -54,7 +55,7 @@ object OrderService extends LazyLogging {
 
   def getOrderDetails(orderId: String): ZIO[OrderService, ErrorInfo, OrderWithRecords] = ZIO.serviceWithZIO[OrderService](_.getOrderDetails(orderId))
 
-  val live = ZLayer {
+  val live: ZLayer[OrderProductRepository with ProductRepository with OrderRepository, Nothing, services.OrderService.OrderService] = ZLayer {
     for {
       orderDao <- ZIO.service[OrderRepository]
       productDao <- ZIO.service[ProductRepository]

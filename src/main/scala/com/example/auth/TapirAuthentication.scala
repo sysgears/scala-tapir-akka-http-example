@@ -1,5 +1,6 @@
 package com.example.auth
 
+import com.example.auth
 import com.example.auth.Jwt.JwtService
 import com.example.dao.UserDao.UserRepository
 import com.example.errors.{ErrorInfo, InternalServerError, Unauthorized}
@@ -22,7 +23,7 @@ object TapirAuthentication extends LazyLogging {
 
   def authenticate(token: String): ZIO[TapirAuth, ErrorInfo, User] = ZIO.serviceWithZIO[TapirAuth](_.authenticate(token))
 
-  val live = ZLayer {
+  val live: ZLayer[UserRepository with JwtService, Nothing, auth.TapirAuthentication.TapirAuth] = ZLayer {
     for {
       jwtService <- ZIO.service[JwtService]
       userDao <- ZIO.service[UserRepository]

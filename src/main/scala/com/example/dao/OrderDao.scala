@@ -1,5 +1,6 @@
 package com.example.dao
 
+import com.example.dao
 import com.example.models.Order
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
@@ -32,7 +33,7 @@ object OrderDao {
     def countOrders(): ZIO[Any, SQLException, Long]
   }
 
-  val live = ZLayer {
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, dao.OrderDao.OrderRepository] = ZLayer {
     for {
       context <- ZIO.service[Quill.Postgres[SnakeCase]]
     } yield {

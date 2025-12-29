@@ -1,5 +1,6 @@
 package com.example.dao
 
+import com.example.dao
 import com.example.models.OrderProduct
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
@@ -29,7 +30,7 @@ object OrderProductDao {
     def removeByOrder(orderId: String): ZIO[Any, SQLException, List[OrderProduct]]
   }
 
-  val live = ZLayer {
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, dao.OrderProductDao.OrderProductRepository] = ZLayer {
     for {
       context <- ZIO.service[Quill.Postgres[SnakeCase]]
     } yield {

@@ -1,5 +1,6 @@
 package com.example.dao
 
+import com.example.dao
 import com.example.models.Roles.RoleType
 import com.example.models.{Roles, User}
 import io.getquill
@@ -25,7 +26,7 @@ object UserDao {
     def findByIds(userIds: Seq[String]): ZIO[Any, SQLException, List[User]]
   }
 
-  val live = ZLayer {
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, dao.UserDao.UserRepository] = ZLayer {
     for {
       context <- ZIO.service[Quill.Postgres[SnakeCase]]
     } yield {

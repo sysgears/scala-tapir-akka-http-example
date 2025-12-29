@@ -4,6 +4,7 @@ import com.example.dao.ProductDao.ProductRepository
 import com.example.errors.{ErrorInfo, InternalServerError}
 import com.example.models.forms.PaginatedEndpointArguments
 import com.example.models.{PaginatedProductListViewResponse, PaginationMetadata}
+import com.example.services
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
 
@@ -27,7 +28,7 @@ object ProductService extends LazyLogging {
   }
   def extractPaginatedProducts(args: PaginatedEndpointArguments): ZIO[ProductService, ErrorInfo, PaginatedProductListViewResponse] = ZIO.serviceWithZIO[ProductService](_.extractPaginatedProducts(args))
 
-  val live = ZLayer {
+  val live: ZLayer[ProductRepository, Nothing, services.ProductService.ProductService] = ZLayer {
     for {
       productDao <- ZIO.service[ProductRepository]
     } yield {

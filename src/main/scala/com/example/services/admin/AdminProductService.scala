@@ -4,6 +4,7 @@ import com.example.dao.ProductDao.ProductRepository
 import com.example.errors.{ErrorInfo, InternalServerError, NotFound}
 import com.example.models.Product
 import com.example.models.forms.NewProductForm
+import com.example.services.admin
 import com.example.utils.{Util, ZioUtil}
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
@@ -27,7 +28,7 @@ object AdminProductService extends LazyLogging {
   def update(product: Product): ZIO[AdminProducts, ErrorInfo, String] = ZIO.serviceWithZIO[AdminProducts](_.update(product))
   def remove(productId: String): ZIO[AdminProducts, ErrorInfo, Unit] = ZIO.serviceWithZIO[AdminProducts](_.remove(productId))
 
-  val live = ZLayer {
+  val live: ZLayer[ProductRepository, Nothing, admin.AdminProductService.AdminProducts] = ZLayer {
     for {
       productDao <- ZIO.service[ProductRepository]
     } yield {

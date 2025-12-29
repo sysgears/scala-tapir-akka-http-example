@@ -53,10 +53,10 @@ trait MainModule {
   // orDie forces to throw an error if anything happens in the app's start
   lazy val authenticationLayer = ZLayer.make[TapirAuth](tapirAuth, userDao, dataSource, postgres, jwtService, config).orDie
   lazy val authServiceLayer = ZLayer.make[Authentication](authService, userDao, dataSource, postgres, jwtService, config).orDie
-  lazy val orderServiceLayer = ZLayer.make[OrderService](orderDao, orderProductDao, productDao, dataSource, postgres).orDie
-  lazy val productServiceLayer = ZLayer.make[ProductService](productDao, dataSource, postgres).orDie
-  lazy val adminProductServiceLayer = ZLayer.make[AdminProducts](productDao, dataSource, postgres).orDie
-  lazy val adminOrderServiceLayer = ZLayer.make[AdminOrders](orderDao, userDao, orderProductDao, productDao, dataSource, postgres).orDie
+  lazy val orderServiceLayer = ZLayer.make[OrderService](orderService, orderDao, orderProductDao, productDao, dataSource, postgres).orDie
+  lazy val productServiceLayer = ZLayer.make[ProductService](productService, productDao, dataSource, postgres).orDie
+  lazy val adminProductServiceLayer = ZLayer.make[AdminProducts](adminProductService, productDao, dataSource, postgres).orDie
+  lazy val adminOrderServiceLayer = ZLayer.make[AdminOrders](adminOrderService, orderDao, userDao, orderProductDao, productDao, dataSource, postgres).orDie
 
   lazy val authController = new AuthController(authServiceLayer)
   lazy val tapirSecurity = new TapirSecurity(authenticationLayer)

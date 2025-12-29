@@ -5,6 +5,7 @@ import com.example.dao.UserDao.UserRepository
 import com.example.errors._
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.models.{Roles, Token, User}
+import com.example.services
 import com.example.utils.{CryptUtils, Util}
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
@@ -42,7 +43,7 @@ object AuthService extends LazyLogging {
   def signIn(form: SignInForm): ZIO[Authentication, ErrorInfo, Token] = ZIO.serviceWithZIO[Authentication](_.signIn(form))
   def signUp(form: SignUpForm): ZIO[Authentication, ErrorInfo, Unit] = ZIO.serviceWithZIO[Authentication](_.signUp(form))
 
-  val live = ZLayer {
+  val live: ZLayer[JwtService with UserRepository, Nothing, services.AuthService.Authentication] = ZLayer {
     for {
       userDao <- ZIO.service[UserRepository]
       jwtService <- ZIO.service[JwtService]

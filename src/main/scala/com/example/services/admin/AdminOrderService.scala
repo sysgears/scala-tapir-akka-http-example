@@ -7,6 +7,7 @@ import com.example.dao.UserDao.UserRepository
 import com.example.errors.{ErrorInfo, InternalServerError, NotFound}
 import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
 import com.example.models._
+import com.example.services.admin
 import com.example.utils.ZioUtil
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
@@ -25,7 +26,7 @@ object AdminOrderService extends LazyLogging {
   def updateOrderStatus(args: AdminOrderStatusChangeArguments): ZIO[AdminOrders, ErrorInfo, String] = ZIO.serviceWithZIO[AdminOrders](_.updateOrderStatus(args))
   def deleteOrder(orderId: String): ZIO[AdminOrders, ErrorInfo, Unit] = ZIO.serviceWithZIO[AdminOrders](_.deleteOrder(orderId))
 
-  val live = ZLayer {
+  val live: ZLayer[OrderProductRepository with UserRepository with ProductRepository with OrderRepository, Nothing, admin.AdminOrderService.AdminOrders] = ZLayer {
     for {
       orderDao <- ZIO.service[OrderRepository]
       productDao <- ZIO.service[ProductRepository]

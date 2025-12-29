@@ -28,7 +28,7 @@ object Jwt {
     def extractUserIdFromJwt(jwt: String): Task[Option[String]]
   }
 
-  val live = ZLayer {
+  val live: ZLayer[Config, Nothing, JwtService] = ZLayer {
     for {
       config <- ZIO.service[Config]
     } yield {

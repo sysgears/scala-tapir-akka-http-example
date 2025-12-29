@@ -1,5 +1,6 @@
 package com.example.dao
 
+import com.example.dao
 import com.example.models.Product
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
@@ -24,7 +25,7 @@ object ProductDao {
     def findByIds(productIds: Seq[String]): ZIO[Any, SQLException, List[Product]]
   }
 
-  val live = ZLayer {
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, dao.ProductDao.ProductRepository] = ZLayer {
     for {
       context <- ZIO.service[Quill.Postgres[SnakeCase]]
     } yield {
