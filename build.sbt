@@ -15,9 +15,9 @@ val CirceVersion = "0.14.15"
 libraryDependencies ++= Seq(
   "io.getquill" %% "quill-jdbc-zio" % "4.8.5",
   "org.postgresql" % "postgresql" % "42.7.8",
-  "dev.zio" %% "zio" % "2.1.24",
-  "dev.zio" %% "zio-test" % "2.1.24",
-  "dev.zio" %% "zio-interop-cats" % "23.1.0.13",
+  "dev.zio" %% "zio" % "2.1.23",
+  "dev.zio" %% "zio-test"          % "2.1.23" % Test,
+  "dev.zio" %% "zio-test-sbt"      % "2.1.23" % Test,
   "io.jsonwebtoken" % "jjwt" % "0.13.0",
   "org.mindrot" % "jbcrypt" % "0.4",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6",
@@ -39,3 +39,5 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.5.23",
   "org.apache.logging.log4j" % "log4j-core" % "2.25.3"
 )
+
+testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
