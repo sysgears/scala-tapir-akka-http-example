@@ -12,6 +12,8 @@ import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
 import sttp.tapir.server.model.ValuedEndpointOutput
 import io.circe.generic.auto._
+import sttp.monad.MonadError
+import sttp.tapir.server.interceptor.DecodeFailureContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,19 +32,18 @@ class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
    * Contains customization for decode failure handler, exception handler and applied metrics interceptor
    */
   implicit val customServerOptions: AkkaHttpServerOptions = AkkaHttpServerOptions.customiseInterceptors
-    .decodeFailureHandler(DecodeFailureHandler.apply(ctx => {
-      ctx.failingInput match {
-        // when defining how a decode failure should be handled, we need to describe the output to be used, and
-        // a value for this output
-        case _: EndpointIO.Body[_, _] =>
-          // see this function and then to failureSourceMessage function to find out which types of decode errors are present
-          val failureMessage = FailureMessages.failureMessage(ctx)
-          logger.info(s"$failureMessage")
-          // warning - log working incorrect when there are several endpoints with different methods
-          DefaultDecodeFailureHandler.respond(ctx)
-        case _ => DefaultDecodeFailureHandler.respond(ctx)
+    .decodeFailureHandler(new DecodeFailureHandler[Future] {
+      override def apply(ctx: DecodeFailureContext)(implicit monad: MonadError[Future]): Future[Option[ValuedEndpointOutput[_]]] = {
+        ctx.failingInput match {
+          case _: EndpointIO.Body[_, _] =>
+            val failureMessage = FailureMessages.failureMessage(ctx)
+            logger.info(s"$failureMessage")
+          case _ => ()
+        }
+        // Delegate to default handler
+        DefaultDecodeFailureHandler[Future](ctx)
       }
-    }))
+    })
     .exceptionHandler(ExceptionHandler[Future] { ctx =>
       val exceptionId = UUID.randomUUID() // defining exception id for the exception to make search in logs easier.
       logger.error(s"Intercepted exception ${ctx.e} while processing request, exception id: $exceptionId")

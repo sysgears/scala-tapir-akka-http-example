@@ -43,7 +43,7 @@ object OrderProductDao {
         override def insert(orderProduct: OrderProduct): ZIO[Any, SQLException, Long] = run(orderItems.insertValue(lift(orderProduct)))
 
         override def update(orderProduct: OrderProduct): ZIO[Any, SQLException, Long] =
-          run(orderItems.filter(orderItem => orderItem.orderId == lift(orderProduct.orderId) && orderItem.productId == lift(orderProduct.productId)).map(_.quantity).updateValue(lift(orderProduct.quantity)))
+          run(orderItems.filter(orderItem => orderItem.orderId == lift(orderProduct.orderId) && orderItem.productId == lift(orderProduct.productId)).update(_.quantity -> lift(orderProduct.quantity)))
 
         override def remove(orderId: String, productId: String): ZIO[Any, SQLException, Long] =
           run(orderItems.filter(orderItem => orderItem.orderId == lift(orderId) && orderItem.productId == lift(productId)).delete)
