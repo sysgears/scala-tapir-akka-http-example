@@ -2,12 +2,14 @@ package com.example
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
-import com.example.auth.TapirSecurity
 import com.example.modules.MainModule
 import com.typesafe.scalalogging.LazyLogging
+import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.model.StatusCode
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 import sttp.tapir._
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 import scala.concurrent.Future
@@ -41,7 +43,7 @@ class TapirRoutes extends LazyLogging with MainModule {
     throw new Exception() // currently throws exceptions to show exception handling
   })
 
-  val endpointList = List(authController.authRoutes, orderController.orderRoutes,
+  val endpointList: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(authController.authRoutes, orderController.orderRoutes,
     productController.productEndpoints, adminProductController.adminProductEndpoints, adminOrderController.adminOrderEndpoints, testEndpoint).flatten
 
   val swaggerEndpoints = SwaggerInterpreter().fromEndpoints[Future](endpointList.map(_.endpoint), "My App", "1.0")

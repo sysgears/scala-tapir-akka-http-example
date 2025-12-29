@@ -8,9 +8,12 @@ import com.example.services.ProductService
 import com.example.services.ProductService.ProductService
 import com.example.utils.ZioUtil
 import io.circe.generic.auto._
+import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.server.ServerEndpoint
 import zio.ULayer
 
 import scala.concurrent.Future
@@ -40,5 +43,5 @@ class ProductController(tapirSecurity: TapirSecurity, productService: ULayer[Pro
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val productEndpoints = List(paginatedProductListEndpoint)
+  val productEndpoints: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(paginatedProductListEndpoint)
 }

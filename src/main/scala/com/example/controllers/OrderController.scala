@@ -11,8 +11,11 @@ import com.example.utils.{Util, ZioUtil}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
+import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.tapir._
 import sttp.model.StatusCode
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.{path, statusCode}
 import zio.ULayer
 
@@ -70,6 +73,6 @@ class OrderController(tapirSecurity: TapirSecurity, orderService: ULayer[OrderSe
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val orderRoutes = List(createOrderEndpoint, viewUserOrderListEndpoint, viewUserOrderEndpoint)
+  val orderRoutes: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(createOrderEndpoint, viewUserOrderListEndpoint, viewUserOrderEndpoint)
 }
 

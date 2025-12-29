@@ -10,10 +10,13 @@ import sttp.tapir.{endpoint, oneOf, oneOfDefaultVariant, oneOfVariant, statusCod
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
+import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.model.StatusCode
+import sttp.tapir.server.ServerEndpoint
 import zio.ULayer
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Controller, which contains auth functions - sign in and sign up.
@@ -32,7 +35,7 @@ class AuthController(authService: ULayer[Authentication]) {
     .in(jsonBody[SignInForm] // requires signInForm in request body, added description and example.
           .description("Required data to log in").example(SignInForm("test@example.com", "pass4567")))
     .out(jsonBody[Token].description("Bearer token for authorization header").example(Token("lkngla2pj45ij3oijma2oij..."))) // described response
-    .errorOut(jsonBody[ErrorMessage]) // described error response type, will return string as json with http 400 code
+    .errorOut(jsonBody[ErrorInfo]) // described error response type, will return string as json with http 400 code
     .serverLogic { form => // defining logic for the endpoint.
       ZioUtil.foldRunToFuture(AuthService.signIn(form).provide(authService))
     }
@@ -60,5 +63,5 @@ class AuthController(authService: ULayer[Authentication]) {
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val authRoutes = List(signInEndpoint, signUpEndpoint)
+  val authRoutes: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(signInEndpoint, signUpEndpoint)
 }

@@ -10,8 +10,11 @@ import com.example.utils.{Util, ZioUtil}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
+import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.model.StatusCode
 import sttp.tapir._
+import sttp.tapir.server.ServerEndpoint
 import zio.ULayer
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -66,5 +69,5 @@ class AdminOrderController(tapirSecurity: TapirSecurity, adminOrderService: ULay
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val adminOrderEndpoints = List(adminOrdersView, changeOrderStatusEndpoint, deleteOrderEndpoint)
+  val adminOrderEndpoints: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(adminOrdersView, changeOrderStatusEndpoint, deleteOrderEndpoint)
 }

@@ -11,11 +11,14 @@ import com.typesafe.scalalogging.LazyLogging
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
+import sttp.capabilities.WebSockets
+import sttp.capabilities.akka.AkkaStreams
 import sttp.model.StatusCode
 import sttp.tapir._
+import sttp.tapir.server.ServerEndpoint
 import zio.ULayer
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Contains admin products endpoints.
@@ -78,7 +81,7 @@ class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: 
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val adminProductEndpoints = List(adminProductsViewEndpoint, createProductEndpoint,
+  val adminProductEndpoints: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(adminProductsViewEndpoint, createProductEndpoint,
     updateProductEndpoint, deleteProductEndpoint)
 
 }
