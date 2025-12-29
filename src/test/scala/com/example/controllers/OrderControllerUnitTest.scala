@@ -38,9 +38,8 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
   it should "Return order list for user" in {
     // preparations
     val orderService = mock[OrderService]
-    val userId = Util.generateUuid
-    val orderList = List(Order(Util.generateUuid, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"))
-    when(orderService.findOrdersForUser(userId)).thenReturn(ZIO.succeed(orderList))
+    val orderList = List(Order(Util.generateUuid, testUser.id, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"))
+    when(orderService.findOrdersForUser(testUser.id)).thenReturn(ZIO.succeed(orderList))
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
@@ -65,9 +64,8 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
   it should "Return order details" in {
     // preparations
     val orderService = mock[OrderService]
-    val userId = Util.generateUuid
     val orderId = Util.generateUuid
-    val orderResponse = OrderWithRecords(Order(orderId, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"),
+    val orderResponse = OrderWithRecords(Order(orderId, testUser.id, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"),
       List(OrderRecord(Some(Product(Util.generateUuid, "test product", "test description", 5.0)), 2)))
     when(orderService.getOrderDetails(orderId)).thenReturn(ZIO.succeed(orderResponse))
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))

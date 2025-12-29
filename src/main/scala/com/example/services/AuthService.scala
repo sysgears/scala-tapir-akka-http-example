@@ -27,7 +27,7 @@ object AuthService extends LazyLogging {
      * @param form contains login and password for sign in.
      * @return either error message or token class with jwt token.
      */
-    def signIn(form: SignInForm): ZIO[Any, ErrorInfo, Token]
+    def signIn(form: SignInForm): ZIO[Any, ErrorMessage, Token]
 
     /**
      * Registers user.
@@ -40,7 +40,7 @@ object AuthService extends LazyLogging {
     def signUp(signUpForm: SignUpForm): ZIO[Any, ErrorInfo, Unit]
   }
 
-  def signIn(form: SignInForm): ZIO[Authentication, ErrorInfo, Token] = ZIO.serviceWithZIO[Authentication](_.signIn(form))
+  def signIn(form: SignInForm): ZIO[Authentication, ErrorMessage, Token] = ZIO.serviceWithZIO[Authentication](_.signIn(form))
   def signUp(form: SignUpForm): ZIO[Authentication, ErrorInfo, Unit] = ZIO.serviceWithZIO[Authentication](_.signUp(form))
 
   val live: ZLayer[JwtService with UserRepository, Nothing, services.AuthService.Authentication] = ZLayer {
@@ -49,19 +49,19 @@ object AuthService extends LazyLogging {
       jwtService <- ZIO.service[JwtService]
     } yield {
       new Service {
-        override def signIn(form: SignInForm): ZIO[Any, ErrorInfo, Token] =
+        override def signIn(form: SignInForm): ZIO[Any, ErrorMessage, Token] =
           userDao.findByEmail(form.login).mapError { error =>
             logger.error("Intercepted error from sign in action", error)
-            InternalServerError("Internal error")
+            ErrorMessage("Internal error")
           }.flatMap {
             case Some(user) =>
               if (CryptUtils.matchBcryptHash(form.password, user.passwordHash).getOrElse(false)) {
                 logger.debug(s"User with id ${user.id} has logged in")
                 jwtService.generateJwt(user.id).map(Token(_))
               } else {
-                ZIO.fail(Unauthorized("Login or password is incorrect. Please, try again"))
+                ZIO.fail(ErrorMessage("Login or password is incorrect. Please, try again"))
               }
-            case None => ZIO.fail(Unauthorized("Login or password is incorrect. Please, try again"))
+            case None => ZIO.fail(ErrorMessage("Login or password is incorrect. Please, try again"))
           }
 
         def signUp(signUpForm: SignUpForm): ZIO[Any, ErrorInfo, Unit] = {
