@@ -2,23 +2,25 @@ package com.example.controllers
 
 import com.example.auth.TapirSecurity
 import com.example.errors.BadRequest
-import com.example.models.{PaginatedProductListViewResponse, Roles}
 import com.example.models.forms.PaginatedEndpointArguments
+import com.example.models.{PaginatedProductListViewResponse, Roles}
 import com.example.services.ProductService
-import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe.jsonBody
+import com.example.services.ProductService.ProductService
+import com.example.utils.ZioUtil
 import io.circe.generic.auto._
 import sttp.tapir._
+import sttp.tapir.generic.auto._
+import sttp.tapir.json.circe.jsonBody
+import zio.ULayer
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 /**
  * Contains endpoints, related to products and available for user
  * @param tapirSecurity security endpoint
  * @param productService service for the controller.
- * @param ec for futures.
  */
-class ProductController(tapirSecurity: TapirSecurity, productService: ProductService)(implicit ec: ExecutionContext) {
+class ProductController(tapirSecurity: TapirSecurity, productService: ULayer[ProductService]) {
 
   /**
    * Retrieves paginated list of products.
@@ -33,7 +35,7 @@ class ProductController(tapirSecurity: TapirSecurity, productService: ProductSer
       if (args.page < 1 || args.pageSize < 1) { // page arguments validation, we don't want negative offset or page size
         Future.successful(Left(BadRequest("Page arguments are invalid!")))
       } else {
-        productService.extractPaginatedProducts(args).map(Right(_))
+        ZioUtil.foldRunToFuture(ProductService.extractPaginatedProducts(args).provide(productService))
       }
     }
 

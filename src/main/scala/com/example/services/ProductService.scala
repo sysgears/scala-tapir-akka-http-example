@@ -25,6 +25,7 @@ object ProductService extends LazyLogging {
      */
     def extractPaginatedProducts(args: PaginatedEndpointArguments): ZIO[Any, ErrorInfo, PaginatedProductListViewResponse]
   }
+  def extractPaginatedProducts(args: PaginatedEndpointArguments): ZIO[ProductService, ErrorInfo, PaginatedProductListViewResponse] = ZIO.serviceWithZIO[ProductService](_.extractPaginatedProducts(args))
 
   val live = ZLayer {
     for {

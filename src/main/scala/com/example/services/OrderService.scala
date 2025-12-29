@@ -16,11 +16,6 @@ import java.time.LocalDateTime
  * Service for the OrderController.
  *
  * Contains functions, required for the controller's endpoints.
- *
- * @param orderDao dao for orders
- * @param productDao dao for products
- * @param orderProductDao dao for order-product relation
- * @param ec for futures.
  */
 object OrderService extends LazyLogging {
 
@@ -33,9 +28,8 @@ object OrderService extends LazyLogging {
      *
      * @param userId user which made the order
      * @param newOrder order itself.
-     * @return insert result for order's records.
      */
-    def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, List[Long]]
+    def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, Unit]
 
     /**
      * Extracts orders for the user without their details.
@@ -54,6 +48,12 @@ object OrderService extends LazyLogging {
     def getOrderDetails(orderId: String): ZIO[Any, ErrorInfo, OrderWithRecords]
   }
 
+  def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[OrderService, ErrorInfo, Unit] = ZIO.serviceWithZIO[OrderService](_.createOrder(userId, newOrder))
+
+  def findOrdersForUser(userId: String): ZIO[OrderService, ErrorInfo, List[Order]] = ZIO.serviceWithZIO[OrderService](_.findOrdersForUser(userId))
+
+  def getOrderDetails(orderId: String): ZIO[OrderService, ErrorInfo, OrderWithRecords] = ZIO.serviceWithZIO[OrderService](_.getOrderDetails(orderId))
+
   val live = ZLayer {
     for {
       orderDao <- ZIO.service[OrderRepository]
@@ -61,7 +61,7 @@ object OrderService extends LazyLogging {
       orderProductDao <- ZIO.service[OrderProductRepository]
     } yield {
       new Service {
-        override def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, List[Long]] = {
+        override def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, Unit] = {
           val order = Order(Util.generateUuid, userId, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), newOrder.comment)
           val products = newOrder.products.map(product => OrderProduct(order.id, product.productId, product.quantity))
           (for {
@@ -70,7 +70,7 @@ object OrderService extends LazyLogging {
             insertResult <- orderProductDao.insertBatch(updatedProducts)
           } yield {
             logger.debug(s"Order with id ${order.id} has been created.")
-            insertResult
+            ()
           }).mapError {
             error =>
               logger.error(s"Intercepted error while creating order for user $userId, order id is $userId", error)
@@ -118,7 +118,7 @@ object OrderService extends LazyLogging {
                   logger.error(s"Intercepted error from getting order details action, order id is $orderId", error)
                   InternalServerError("Internal error")
               }
-            case None => ZIO.fail(BadRequest("Order id is empty"))
+            case None => ZIO.fail(NotFound("Order id is empty"))
           }
 
         }

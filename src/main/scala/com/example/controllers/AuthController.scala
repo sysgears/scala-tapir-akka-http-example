@@ -4,11 +4,14 @@ import com.example.errors.{BadRequest, Conflict, ErrorInfo, ErrorMessage}
 import com.example.models.Token
 import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.services.AuthService
+import com.example.services.AuthService.Authentication
+import com.example.utils.ZioUtil
 import sttp.tapir.{endpoint, oneOf, oneOfDefaultVariant, oneOfVariant, statusCode}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
 import sttp.model.StatusCode
+import zio.ULayer
 
 import scala.concurrent.ExecutionContext
 
@@ -16,9 +19,8 @@ import scala.concurrent.ExecutionContext
  * Controller, which contains auth functions - sign in and sign up.
  *
  * @param authService service for the controller.
- * @param ec for futures.
  */
-class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
+class AuthController(authService: ULayer[Authentication]) {
 
   /**
    * Sign in endpoint defining.
@@ -32,7 +34,7 @@ class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
     .out(jsonBody[Token].description("Bearer token for authorization header").example(Token("lkngla2pj45ij3oijma2oij..."))) // described response
     .errorOut(jsonBody[ErrorMessage]) // described error response type, will return string as json with http 400 code
     .serverLogic { form => // defining logic for the endpoint.
-      authService.signIn(form)
+      ZioUtil.foldRunToFuture(AuthService.signIn(form).provide(authService))
     }
 
   /**
@@ -54,7 +56,7 @@ class AuthController(authService: AuthService)(implicit ec: ExecutionContext) {
       )
     )
     .serverLogic { signUpForm => // defined logic for the endpoint.
-      authService.signUp(signUpForm)
+      ZioUtil.foldRunToFuture(AuthService.signUp(signUpForm).provide(authService))
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */

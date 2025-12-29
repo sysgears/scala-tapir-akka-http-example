@@ -10,9 +10,6 @@ import zio.{ZIO, ZLayer}
 
 /**
  * Contains authentication functionality.
- *
- * @param jwtService service, which works with jwt tokens.
- * @param ec for async futures.
  */
 object TapirAuthentication extends LazyLogging {
 

@@ -4,7 +4,7 @@ import com.example.dao.OrderDao.OrderRepository
 import com.example.dao.OrderProductDao.OrderProductRepository
 import com.example.dao.ProductDao.ProductRepository
 import com.example.dao.UserDao.UserRepository
-import com.example.errors.{ErrorInfo, InternalServerError}
+import com.example.errors.{ErrorInfo, InternalServerError, NotFound}
 import com.example.models.forms.{AdminOrderStatusChangeArguments, PaginatedEndpointArguments}
 import com.example.models._
 import com.example.utils.ZioUtil
@@ -13,13 +13,17 @@ import zio.{ZIO, ZLayer}
 
 object AdminOrderService extends LazyLogging {
 
-  type AdminOrder = AdminOrderService.Service
+  type AdminOrders = AdminOrderService.Service
 
   trait Service {
     def extractPaginatedOrders(args: PaginatedEndpointArguments): ZIO[Any, ErrorInfo, AdminOrderViewResponse]
-    def updateOrderStatus(args: AdminOrderStatusChangeArguments): ZIO[Any, ErrorInfo, Long]
-    def deleteOrder(orderId: String): ZIO[Any, ErrorInfo, Long]
+    def updateOrderStatus(args: AdminOrderStatusChangeArguments): ZIO[Any, ErrorInfo, String]
+    def deleteOrder(orderId: String): ZIO[Any, ErrorInfo, Unit]
   }
+
+  def extractPaginatedOrders(args: PaginatedEndpointArguments): ZIO[AdminOrders, ErrorInfo, AdminOrderViewResponse] = ZIO.serviceWithZIO[AdminOrders](_.extractPaginatedOrders(args))
+  def updateOrderStatus(args: AdminOrderStatusChangeArguments): ZIO[AdminOrders, ErrorInfo, String] = ZIO.serviceWithZIO[AdminOrders](_.updateOrderStatus(args))
+  def deleteOrder(orderId: String): ZIO[AdminOrders, ErrorInfo, Unit] = ZIO.serviceWithZIO[AdminOrders](_.deleteOrder(orderId))
 
   val live = ZLayer {
     for {
@@ -56,11 +60,19 @@ object AdminOrderService extends LazyLogging {
           })
         }
 
-        override def updateOrderStatus(args: AdminOrderStatusChangeArguments): ZIO[Any, ErrorInfo, Long] =
-          ZioUtil.interceptSqlErrors(orderDao.updateStatus(args.orderId, args.newStatus.toLowerCase()))
+        override def updateOrderStatus(args: AdminOrderStatusChangeArguments): ZIO[Any, ErrorInfo, String] =
+          ZioUtil.interceptSqlErrors(orderDao.updateStatus(args.orderId, args.newStatus.toLowerCase())).flatMap {
+            case 0 => ZIO.fail(NotFound(s"Order ${args.orderId} not found")) // if record wasn't updated
+            case x if x > 0 => ZIO.succeed("Updated!") // success
+            case _ => ZIO.fail(InternalServerError("Unknown error, got less 0 result")) // unexpected result
+          }
 
-        override def deleteOrder(orderId: String): ZIO[Any, ErrorInfo, Long] = {
-          ZioUtil.interceptSqlErrors(orderDao.remove(orderId))
+        override def deleteOrder(orderId: String): ZIO[Any, ErrorInfo, Unit] = {
+          ZioUtil.interceptSqlErrors(orderDao.remove(orderId)).map {
+            case 0 => ZIO.fail((NotFound(s"Order $orderId not found"))) // if record wasn't removed
+            case x if x > 0 => ZIO.succeed(()) // success
+            case _ => ZIO.fail(InternalServerError("Unknown error, got less 0 result")) // unexpected result
+          }
         }
       }
     }

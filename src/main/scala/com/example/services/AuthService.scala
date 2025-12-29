@@ -15,10 +15,6 @@ import java.time.LocalDateTime
  * Service for the AuthController.
  *
  * Contains functions, required for the controller's endpoints.
- *
- * @param userDao dao for users.
- * @param jwtService contains functions, which works with jwt token.
- * @param ec for futures.
  */
 object AuthService extends LazyLogging {
 

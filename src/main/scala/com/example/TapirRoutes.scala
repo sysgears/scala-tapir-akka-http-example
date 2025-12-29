@@ -2,6 +2,7 @@ package com.example
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
+import com.example.auth.TapirSecurity
 import com.example.modules.MainModule
 import com.typesafe.scalalogging.LazyLogging
 import sttp.model.StatusCode
@@ -21,6 +22,7 @@ class TapirRoutes extends LazyLogging with MainModule {
 
   // mostly for execution context
   import actorSystem.dispatcher
+  // todo: come up with providing layers to controllers
 
   /*
     test tapir endpoint. This endpoint continues security endpoint.
