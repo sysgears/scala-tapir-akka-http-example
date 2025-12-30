@@ -8,22 +8,25 @@ import com.example.models.User
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
 
-
 /**
- * Contains authentication functionality.
- */
+  * Contains authentication functionality.
+  */
 object TapirAuthentication extends LazyLogging {
 
   type TapirAuth = TapirAuthentication.Service
 
   trait Service {
+
     /** Extracts user from token. Return either Status code with error message or user. */
     def authenticate(token: String): ZIO[Any, ErrorInfo, User]
   }
 
-  def authenticate(token: String): ZIO[TapirAuth, ErrorInfo, User] = ZIO.serviceWithZIO[TapirAuth](_.authenticate(token))
+  def authenticate(token: String): ZIO[TapirAuth, ErrorInfo, User] =
+    ZIO.serviceWithZIO[TapirAuth](_.authenticate(token))
 
-  val live: ZLayer[UserRepository with JwtService, Nothing, auth.TapirAuthentication.TapirAuth] = ZLayer {
+  val live: ZLayer[UserRepository with JwtService,
+                   Nothing,
+                   auth.TapirAuthentication.TapirAuth] = ZLayer {
     for {
       jwtService <- ZIO.service[JwtService]
       userDao <- ZIO.service[UserRepository]
@@ -31,17 +34,31 @@ object TapirAuthentication extends LazyLogging {
       new Service {
 
         override def authenticate(token: String): ZIO[Any, ErrorInfo, User] =
-          jwtService.extractUserIdFromJwt(token).mapError(error => Unauthorized("Token is expired. You need to log in first")).flatMap {
-            case Some(userId) =>
-              userDao.find(userId).mapError { error =>
-                logger.error("Intercepted error within authenticate action", error)
-                InternalServerError("Internal error")
-              }.flatMap {
-                case Some(user) => ZIO.succeed(user)
-                case None => ZIO.fail(Unauthorized("user from token is not found"))
-              }
-            case None => ZIO.fail(Unauthorized("user from token is not found"))
-          }
+          jwtService
+            .extractUserIdFromJwt(token)
+            .mapError(
+              error =>
+                Unauthorized("Token is expired. You need to log in first")
+            )
+            .flatMap {
+              case Some(userId) =>
+                userDao
+                  .find(userId)
+                  .mapError { error =>
+                    logger.error(
+                      "Intercepted error within authenticate action",
+                      error
+                    )
+                    InternalServerError("Internal error")
+                  }
+                  .flatMap {
+                    case Some(user) => ZIO.succeed(user)
+                    case None =>
+                      ZIO.fail(Unauthorized("user from token is not found"))
+                  }
+              case None =>
+                ZIO.fail(Unauthorized("user from token is not found"))
+            }
       }
     }
   }

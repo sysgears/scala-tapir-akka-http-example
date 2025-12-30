@@ -4,11 +4,20 @@ import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 /**
- * Tests for sign up form validation.
- */
+  * Tests for sign up form validation.
+  */
 class SignUpFormUnitTest extends AsyncFlatSpec with Matchers {
 
-  val form: SignUpForm = SignUpForm("test name", "+77777777777", "test@example.com", "49050", "Dnipro", "test address, 46", "pass456", "pass456")
+  val form: SignUpForm = SignUpForm(
+    "test name",
+    "+77777777777",
+    "test@example.com",
+    "49050",
+    "Dnipro",
+    "test address, 46",
+    "pass456",
+    "pass456"
+  )
 
   /** Case when form is correct. */
   it should "validate correct form correctly" in {
@@ -22,7 +31,10 @@ class SignUpFormUnitTest extends AsyncFlatSpec with Matchers {
 
   /** Case when passwords are too short. */
   it should "validate too short password correctly" in {
-    form.copy(password = "pass", repeatPassword = "pass").isValid.isLeft shouldBe true
+    form
+      .copy(password = "pass", repeatPassword = "pass")
+      .isValid
+      .isLeft shouldBe true
   }
 
   /** Case when passwords not matches. */

@@ -25,29 +25,48 @@ import zio.{ZIO, ZLayer}
 import scala.concurrent.Future
 
 /**
- * Contains tests for endpoint security. Only TapirSecurity is checked.
- *
- * OrdersController is used because using ready to go endpoint is faster.
- *
- * Only invalid cases are present, because other tests using this security will use success auth case.
- */
-class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
+  * Contains tests for endpoint security. Only TapirSecurity is checked.
+  *
+  * OrdersController is used because using ready to go endpoint is faster.
+  *
+  * Only invalid cases are present, because other tests using this security will use success auth case.
+  */
+class TapirSecurityUnitTest
+    extends AsyncFlatSpec
+    with Matchers
+    with LazyLogging {
 
-  val testUser: User = User(Util.generateUuid, "test name", "+777777777", "test@example.com", "hash", "49050", "Dnipro", "test address", Roles.User, LocalDateTime.now())
+  val testUser: User = User(
+    Util.generateUuid,
+    "test name",
+    "+777777777",
+    "test@example.com",
+    "hash",
+    "49050",
+    "Dnipro",
+    "test address",
+    Roles.User,
+    LocalDateTime.now()
+  )
 
   /** Case where user with wrong role is trying get endpoint for another user role. */
   it should "Reject user with wrong role" in {
     // preparations
     val authentication = mock[TapirAuth]
-    when(authentication.authenticate(any[String])).thenReturn(ZIO.succeed(testUser.copy(role = Roles.Admin)))
+    when(authentication.authenticate(any[String]))
+      .thenReturn(ZIO.succeed(testUser.copy(role = Roles.Admin)))
     val orderService = mock[OrdersService]
-    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
+    val orderController = new OrderController(
+      new TapirSecurity(ZLayer.succeed(authentication)),
+      ZLayer.succeed(orderService)
+    )
 
     // given
-    val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
-      .whenServerEndpoint(orderController.viewUserOrderListEndpoint)
-      .thenRunLogic()
-      .backend()
+    val backendStub: SttpBackend[Future, Any] =
+      TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
+        .whenServerEndpoint(orderController.viewUserOrderListEndpoint)
+        .thenRunLogic()
+        .backend()
 
     // when
     val response = basicRequest
@@ -59,7 +78,9 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
     response.map { resp =>
       logger.info(s"orders expecting 403 Forbidden: ${resp.body}")
       resp.code shouldBe StatusCode.Forbidden
-      resp.body shouldBe Left(Forbidden("user is not allowed to use this endpoint").asJson.noSpaces)
+      resp.body shouldBe Left(
+        Forbidden("user is not allowed to use this endpoint").asJson.noSpaces
+      )
     }
   }
 
@@ -67,15 +88,21 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
   it should "Reject user with wrong or expired jwt token" in {
     // preparations
     val authentication = mock[TapirAuth]
-    when(authentication.authenticate(any[String])).thenReturn(ZIO.fail(Unauthorized("Token is expired. You need to log in first")))
+    when(authentication.authenticate(any[String])).thenReturn(
+      ZIO.fail(Unauthorized("Token is expired. You need to log in first"))
+    )
     val orderService = mock[OrdersService]
-    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
+    val orderController = new OrderController(
+      new TapirSecurity(ZLayer.succeed(authentication)),
+      ZLayer.succeed(orderService)
+    )
 
     // given
-    val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
-      .whenServerEndpoint(orderController.viewUserOrderListEndpoint)
-      .thenRunLogic()
-      .backend()
+    val backendStub: SttpBackend[Future, Any] =
+      TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
+        .whenServerEndpoint(orderController.viewUserOrderListEndpoint)
+        .thenRunLogic()
+        .backend()
 
     // when
     val response = basicRequest
@@ -85,9 +112,13 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
 
     // then
     response.map { resp =>
-      println(s"orders expecting 401 Unauthorized when jwt token is invalid: ${resp.body}")
+      println(
+        s"orders expecting 401 Unauthorized when jwt token is invalid: ${resp.body}"
+      )
       resp.code shouldBe StatusCode.Unauthorized
-      resp.body shouldBe Left(Unauthorized("Token is expired. You need to log in first").asJson.noSpaces)
+      resp.body shouldBe Left(
+        Unauthorized("Token is expired. You need to log in first").asJson.noSpaces
+      )
     }
   }
 
@@ -96,13 +127,17 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
     // preparations
     val authentication = mock[TapirAuth]
     val orderService = mock[OrdersService]
-    val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
+    val orderController = new OrderController(
+      new TapirSecurity(ZLayer.succeed(authentication)),
+      ZLayer.succeed(orderService)
+    )
 
     // given
-    val backendStub: SttpBackend[Future, Any] = TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
-      .whenServerEndpoint(orderController.viewUserOrderListEndpoint)
-      .thenRunLogic()
-      .backend()
+    val backendStub: SttpBackend[Future, Any] =
+      TapirStubInterpreter(SttpBackendStub.asynchronousFuture)
+        .whenServerEndpoint(orderController.viewUserOrderListEndpoint)
+        .thenRunLogic()
+        .backend()
 
     // when
     val response = basicRequest
@@ -111,7 +146,9 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
 
     // then
     response.map { resp =>
-      logger.info(s"orders expecting 401 Unauthorized when header is missing: ${resp.body}")
+      logger.info(
+        s"orders expecting 401 Unauthorized when header is missing: ${resp.body}"
+      )
       resp.code shouldBe StatusCode.Unauthorized
     }
   }
