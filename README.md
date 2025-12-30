@@ -1,5 +1,7 @@
 # Tapir Akka-Http
 
+Check out new zio-checkpoint branch!
+
 <desc>Advanced back-end service with Tapir, Akka-Http, Quill and Macwire</desc>
 
 Task - create service, similar to some kind of shop using Tapir with 
