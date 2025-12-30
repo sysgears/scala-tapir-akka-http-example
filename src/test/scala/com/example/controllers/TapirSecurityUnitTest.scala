@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 import com.example.auth.{TapirAuthentication, TapirSecurity}
 import com.example.errors.{Forbidden, Unauthorized}
 import com.example.models.{Roles, User}
-import com.example.services.OrderService.OrderService
+import com.example.services.OrderService.OrdersService
 import com.example.utils.Util
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
@@ -40,7 +40,7 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
     // preparations
     val authentication = mock[TapirAuth]
     when(authentication.authenticate(any[String])).thenReturn(ZIO.succeed(testUser.copy(role = Roles.Admin)))
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
@@ -68,7 +68,7 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
     // preparations
     val authentication = mock[TapirAuth]
     when(authentication.authenticate(any[String])).thenReturn(ZIO.fail(Unauthorized("Token is expired. You need to log in first")))
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given
@@ -95,7 +95,7 @@ class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging
   it should "Reject user without jwt token" in {
     // preparations
     val authentication = mock[TapirAuth]
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
     // given

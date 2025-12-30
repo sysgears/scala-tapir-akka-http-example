@@ -6,7 +6,7 @@ import com.example.errors.{BadRequest, NotFound}
 import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.services.OrderService
-import com.example.services.OrderService.OrderService
+import com.example.services.OrderService.OrdersService
 import com.example.utils.{Util, ZioUtil}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param tapirSecurity security endpoint.
  * @param orderService service for the controller.
  */
-class OrderController(tapirSecurity: TapirSecurity, orderService: ULayer[OrderService]) {
+class OrderController(tapirSecurity: TapirSecurity, orderService: ULayer[OrdersService]) {
 
   /**
    * Create order endpoint.

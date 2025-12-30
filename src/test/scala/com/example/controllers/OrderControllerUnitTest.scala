@@ -8,7 +8,7 @@ import com.example.errors.{BadRequest, NotFound}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
 import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles, User}
 import com.example.services.OrderService
-import com.example.services.OrderService.OrderService
+import com.example.services.OrderService.OrdersService
 import com.example.utils.Util
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
@@ -37,7 +37,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
   it should "Return order list for user" in {
     // preparations
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     val orderList = List(Order(Util.generateUuid, testUser.id, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"))
     when(orderService.findOrdersForUser(testUser.id)).thenReturn(ZIO.succeed(orderList))
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
@@ -63,7 +63,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
   it should "Return order details" in {
     // preparations
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     val orderId = Util.generateUuid
     val orderResponse = OrderWithRecords(Order(orderId, testUser.id, LocalDateTime.now(), Order.NEW_STATUS, LocalDateTime.now(), "comment"),
       List(OrderRecord(Some(Product(Util.generateUuid, "test product", "test description", 5.0)), 2)))
@@ -91,7 +91,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
   it should "Return NotFound to order details request for not-existing order" in {
     // preparations
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     val orderId = Util.generateUuid
     when(orderService.getOrderDetails(orderId)).thenReturn(ZIO.fail(NotFound()))
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
@@ -117,7 +117,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
   it should "Create new order for the user" in {
     // preparations
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     when(orderService.createOrder(any[String], any[CreateOrderForm])).thenReturn(ZIO.succeed(List(1,2)))
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 
@@ -143,7 +143,7 @@ class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLoggi
 
   it should "Reject creating new user because some value about product is invalid" in {
     // preparations
-    val orderService = mock[OrderService]
+    val orderService = mock[OrdersService]
     when(orderService.createOrder(any[String], any[CreateOrderForm])).thenReturn(ZIO.succeed(List(1, 2)))
     val orderController = new OrderController(new TapirSecurity(ZLayer.succeed(authentication)), ZLayer.succeed(orderService))
 

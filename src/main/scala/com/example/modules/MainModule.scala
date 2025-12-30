@@ -8,7 +8,7 @@ import com.example.controllers._
 import com.example.dao._
 import com.example.errors.ErrorHandler
 import com.example.services.AuthService.Authentication
-import com.example.services.OrderService.OrderService
+import com.example.services.OrderService.OrdersService
 import com.example.services.ProductService.ProductService
 import com.example.services._
 import com.example.services.admin.AdminOrderService.AdminOrders
@@ -53,7 +53,7 @@ trait MainModule {
   // orDie forces to throw an error if anything happens in the app's start
   lazy val authenticationLayer = ZLayer.make[TapirAuth](tapirAuth, userDao, dataSource, postgres, jwtService, config).orDie
   lazy val authServiceLayer = ZLayer.make[Authentication](authService, userDao, dataSource, postgres, jwtService, config).orDie
-  lazy val orderServiceLayer = ZLayer.make[OrderService](orderService, orderDao, orderProductDao, productDao, dataSource, postgres).orDie
+  lazy val orderServiceLayer = ZLayer.make[OrdersService](orderService, orderDao, orderProductDao, productDao, dataSource, postgres).orDie
   lazy val productServiceLayer = ZLayer.make[ProductService](productService, productDao, dataSource, postgres).orDie
   lazy val adminProductServiceLayer = ZLayer.make[AdminProducts](adminProductService, productDao, dataSource, postgres).orDie
   lazy val adminOrderServiceLayer = ZLayer.make[AdminOrders](adminOrderService, orderDao, userDao, orderProductDao, productDao, dataSource, postgres).orDie
