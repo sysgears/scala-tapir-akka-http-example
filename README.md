@@ -30,8 +30,8 @@ Stack
 - Akka-Http
 - ZIO Quill v4.8.5
 - Circe json 0.14.15
-- ZIO 2.1.24
-- Scalatest, Mockito (testing)
+- ZIO 2.1.23
+- Scalatest, Mockito, zio-test (testing)
 
 Useful links
 -
