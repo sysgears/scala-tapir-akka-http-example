@@ -15,8 +15,7 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import scala.concurrent.Future
 import scala.io.StdIn
 
-/**
-  * Application's init point.
+/** Application's init point.
   *
   * Extends main module, which contains all wirings and starts the server. Also contains test route for first example.
   */
@@ -30,11 +29,13 @@ class TapirRoutes extends LazyLogging with MainModule {
     test tapir endpoint. This endpoint continues security endpoint.
    */
   val tapirEndpoint = tapirSecurity
-    .tapirSecurityEndpoint(List.empty) // no rule restriction (authorization)
-    .get // http type
-    .description("test endpoint") // endpoint's description
+    .tapirSecurityEndpoint(List.empty)       // no rule restriction (authorization)
+    .get                                     // http type
+    .description("test endpoint")            // endpoint's description
     .in("test".description("endpoint path")) // description for uri path, /test uri
-    .out(stringBody.description("type of response")) // This endpoint will return string body. Also, description for body
+    .out(
+      stringBody.description("type of response")
+    ) // This endpoint will return string body. Also, description for body
     .out(
       statusCode(StatusCode.Created)
         .description("Specifies response status code for success case")
@@ -59,8 +60,7 @@ class TapirRoutes extends LazyLogging with MainModule {
   val swaggerEndpoints = SwaggerInterpreter()
     .fromEndpoints[Future](endpointList.map(_.endpoint), "My App", "1.0")
 
-  /**
-    * Result route. Contains all active endpoints and this route will be bound to the server.
+  /** Result route. Contains all active endpoints and this route will be bound to the server.
     */
   val resultRoute: Route =
     timeTracker.aroundRequest(timeTracker.timeRequest) {
@@ -74,8 +74,7 @@ class TapirRoutes extends LazyLogging with MainModule {
       )
     }
 
-  /**
-    * Starts server using route above.
+  /** Starts server using route above.
     */
   def init(): Unit = {
     val bindingFuture = Http().newServerAt("localhost", 9000).bind(resultRoute)

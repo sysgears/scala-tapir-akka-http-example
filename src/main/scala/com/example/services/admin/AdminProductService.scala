@@ -9,8 +9,7 @@ import com.example.utils.{Util, ZioUtil}
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
 
-/**
-  * Contains functions for the controller.
+/** Contains functions for the controller.
   */
 object AdminProductService extends LazyLogging {
 
@@ -25,18 +24,19 @@ object AdminProductService extends LazyLogging {
 
   def findAllProducts(): ZIO[AdminProducts, ErrorInfo, List[Product]] =
     ZIO.serviceWithZIO[AdminProducts](_.findAllProducts())
+
   def insert(
-    newProductForm: NewProductForm
+      newProductForm: NewProductForm
   ): ZIO[AdminProducts, ErrorInfo, Unit] =
     ZIO.serviceWithZIO[AdminProducts](_.insert(newProductForm))
+
   def update(product: Product): ZIO[AdminProducts, ErrorInfo, String] =
     ZIO.serviceWithZIO[AdminProducts](_.update(product))
+
   def remove(productId: String): ZIO[AdminProducts, ErrorInfo, Unit] =
     ZIO.serviceWithZIO[AdminProducts](_.remove(productId))
 
-  val live: ZLayer[ProductRepository,
-                   Nothing,
-                   admin.AdminProductService.AdminProducts] = ZLayer {
+  val live: ZLayer[ProductRepository, Nothing, admin.AdminProductService.AdminProducts] = ZLayer {
     for {
       productDao <- ZIO.service[ProductRepository]
     } yield {
@@ -47,7 +47,7 @@ object AdminProductService extends LazyLogging {
         }
 
         override def insert(
-          newProductForm: NewProductForm
+            newProductForm: NewProductForm
         ): ZIO[Any, ErrorInfo, Unit] = {
           val newProduct = Product(
             Util.generateUuid,

@@ -10,9 +10,9 @@ import scala.concurrent.Future
 
 object ZioUtil extends LazyLogging {
 
-  /**
-    * Exiting zio execution. Use only on edges of zio integration.
-    * @param monad
+  /** Exiting zio execution. Use only on edges of zio integration.
+   *
+    * @param monad zio to run to future
     * @tparam T monad result
     * @return
     */
@@ -22,9 +22,9 @@ object ZioUtil extends LazyLogging {
     }
   }
 
-  /**
-    * Same as runToFuture, but also places both failed and successful results into Either
-    * @param monad
+  /** Same as runToFuture, but also places both failed and successful results into Either
+   *
+    * @param monad zio to parse both success and failure to either and then run to future
     * @tparam E error type
     * @tparam T success type
     * @return Future with Either, which contains both failure and success
@@ -36,7 +36,7 @@ object ZioUtil extends LazyLogging {
   }
 
   def interceptSqlErrors[T](
-    zio: ZIO[Any, SQLException, T]
+      zio: ZIO[Any, SQLException, T]
   ): ZIO[Any, ErrorInfo, T] = {
     zio.mapError { error =>
       logger.error(s"Intercepted SQL exception", error)

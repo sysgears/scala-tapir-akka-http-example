@@ -8,8 +8,7 @@ import com.example.services
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
 
-/**
-  * Service for product controller.
+/** Service for product controller.
   *
   * Contains functions, required for the controller's endpoints.
   */
@@ -19,47 +18,43 @@ object ProductService extends LazyLogging {
 
   trait Service {
 
-    /**
-      * Extracts paginated products.
+    /** Extracts paginated products.
       *
       * @param args contains page and page size.
       * @return metadata and extracted products.
       */
     def extractPaginatedProducts(
-      args: PaginatedEndpointArguments
+        args: PaginatedEndpointArguments
     ): ZIO[Any, ErrorInfo, PaginatedProductListViewResponse]
   }
 
   def extractPaginatedProducts(
-    args: PaginatedEndpointArguments
+      args: PaginatedEndpointArguments
   ): ZIO[ProductService, ErrorInfo, PaginatedProductListViewResponse] =
     ZIO.serviceWithZIO[ProductService](_.extractPaginatedProducts(args))
 
-  val live: ZLayer[ProductRepository,
-                   Nothing,
-                   services.ProductService.ProductService] = ZLayer {
+  val live: ZLayer[ProductRepository, Nothing, services.ProductService.ProductService] = ZLayer {
     for {
       productDao <- ZIO.service[ProductRepository]
     } yield {
       new Service {
 
-        /**
-          * Extracts paginated products.
+        /** Extracts paginated products.
           *
           * @param args contains page and page size.
           * @return metadata and extracted products.
           */
         override def extractPaginatedProducts(
-          args: PaginatedEndpointArguments
+            args: PaginatedEndpointArguments
         ): ZIO[Any, ErrorInfo, PaginatedProductListViewResponse] = {
           logger.trace(
             s"Started extracting paginated products, page: ${args.page}, page size: ${args.pageSize}"
           )
-          val offset = (args.page - 1) * args.pageSize
+          val offset           = (args.page - 1) * args.pageSize
           val findPaginatedZio = productDao.findPaginated(args.pageSize, offset)
           val countProductsZio = productDao.countProducts()
           (for {
-            products <- findPaginatedZio
+            products      <- findPaginatedZio
             productsCount <- countProductsZio
           } yield {
             val pages =

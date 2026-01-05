@@ -6,10 +6,7 @@ import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.generic.auto._
 import sttp.tapir._
 import sttp.tapir.server.akkahttp.AkkaHttpServerOptions
-import sttp.tapir.server.interceptor.decodefailure.{
-  DecodeFailureHandler,
-  DefaultDecodeFailureHandler
-}
+import sttp.tapir.server.interceptor.decodefailure.{DecodeFailureHandler, DefaultDecodeFailureHandler}
 import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler.FailureMessages
 import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
@@ -20,8 +17,8 @@ import sttp.tapir.server.interceptor.DecodeFailureContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Contains error handler interceptors with additional interceptors
+/** Contains error handler interceptors with additional interceptors
+  *
   * @param ec for futures
   */
 class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
@@ -29,16 +26,15 @@ class ErrorHandler(implicit ec: ExecutionContext) extends LazyLogging {
   /** Prometheus metrics interceptor. */
   val prometheusMetrics = PrometheusMetrics.default[Future]()
 
-  /**
-    * Configuration for AkkaHttpServer routes.
+  /** Configuration for AkkaHttpServer routes.
     *
     * Contains customization for decode failure handler, exception handler and applied metrics interceptor
     */
-  implicit val customServerOptions
-    : AkkaHttpServerOptions = AkkaHttpServerOptions.customiseInterceptors
+  implicit val customServerOptions: AkkaHttpServerOptions = AkkaHttpServerOptions.customiseInterceptors
     .decodeFailureHandler(new DecodeFailureHandler[Future] {
-      override def apply(ctx: DecodeFailureContext)(
-        implicit monad: MonadError[Future]
+
+      override def apply(ctx: DecodeFailureContext)(implicit
+          monad: MonadError[Future]
       ): Future[Option[ValuedEndpointOutput[_]]] = {
         ctx.failingInput match {
           case _: EndpointIO.Body[_, _] =>

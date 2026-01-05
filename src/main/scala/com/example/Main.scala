@@ -1,8 +1,6 @@
 package com.example
 
-/**
- * Starts application.
- */
+/** Starts application. */
 object Main extends App {
   new TapirRoutes().init()
 }

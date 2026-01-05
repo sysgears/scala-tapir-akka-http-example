@@ -6,16 +6,18 @@ import com.example.models.Roles.RoleType
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 /** Represents user. */
-case class User(id: String,
-                name: String,
-                phoneNumber: String,
-                email: String,
-                passwordHash: String,
-                zip: String,
-                city: String,
-                address: String,
-                role: RoleType, // enum value.
-                created: LocalDateTime)
+case class User(
+    id: String,
+    name: String,
+    phoneNumber: String,
+    email: String,
+    passwordHash: String,
+    zip: String,
+    city: String,
+    address: String,
+    role: RoleType, // enum value.
+    created: LocalDateTime
+)
 
 object User {
   import com.example.utils.GenericJsonFormats._

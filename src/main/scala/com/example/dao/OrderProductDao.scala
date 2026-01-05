@@ -8,8 +8,7 @@ import zio.{ZIO, ZLayer}
 
 import java.sql.SQLException
 
-/**
-  * Repository for OrderProduct table
+/** Repository for OrderProduct table
   *
   * This is case of handling order-item relation for SQL databases.
   * In case of NoSQL, like MongoDB, you would keep information about item and quantity within order index
@@ -27,23 +26,21 @@ object OrderProductDao {
     def remove(orderId: String, productId: String): ZIO[Any, SQLException, Long]
 
     def findByOrders(
-      orderIds: Seq[String]
+        orderIds: Seq[String]
     ): ZIO[Any, SQLException, List[OrderProduct]]
 
     def findByOrder(orderId: String): ZIO[Any, SQLException, List[OrderProduct]]
 
     def insertBatch(
-      orderProductList: List[OrderProduct]
+        orderProductList: List[OrderProduct]
     ): ZIO[Any, SQLException, List[Long]]
 
     def removeByOrder(
-      orderId: String
+        orderId: String
     ): ZIO[Any, SQLException, List[OrderProduct]]
   }
 
-  val live: ZLayer[Quill.Postgres[SnakeCase],
-                   Nothing,
-                   dao.OrderProductDao.OrderProductRepository] = ZLayer {
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, dao.OrderProductDao.OrderProductRepository] = ZLayer {
     for {
       context <- ZIO.service[Quill.Postgres[SnakeCase]]
     } yield {
@@ -56,53 +53,48 @@ object OrderProductDao {
         }
 
         override def insert(
-          orderProduct: OrderProduct
+            orderProduct: OrderProduct
         ): ZIO[Any, SQLException, Long] =
           run(orderItems.insertValue(lift(orderProduct)))
 
         override def update(
-          orderProduct: OrderProduct
+            orderProduct: OrderProduct
         ): ZIO[Any, SQLException, Long] =
           run(
             orderItems
-              .filter(
-                orderItem =>
-                  orderItem.orderId == lift(orderProduct.orderId) && orderItem.productId == lift(
-                    orderProduct.productId
+              .filter(orderItem =>
+                orderItem.orderId == lift(orderProduct.orderId) && orderItem.productId == lift(
+                  orderProduct.productId
                 )
               )
               .update(_.quantity -> lift(orderProduct.quantity))
           )
 
-        override def remove(orderId: String,
-                            productId: String): ZIO[Any, SQLException, Long] =
+        override def remove(orderId: String, productId: String): ZIO[Any, SQLException, Long] =
           run(
             orderItems
-              .filter(
-                orderItem =>
-                  orderItem.orderId == lift(orderId) && orderItem.productId == lift(
-                    productId
+              .filter(orderItem =>
+                orderItem.orderId == lift(orderId) && orderItem.productId == lift(
+                  productId
                 )
               )
               .delete
           )
 
         override def findByOrders(
-          orderIds: Seq[String]
+            orderIds: Seq[String]
         ): ZIO[Any, SQLException, List[OrderProduct]] =
           run(
-            orderItems.filter(
-              orderItem => liftQuery(orderIds).contains(orderItem.orderId)
-            )
+            orderItems.filter(orderItem => liftQuery(orderIds).contains(orderItem.orderId))
           ) // example of batch extraction. liftQuery is required.
 
         override def findByOrder(
-          orderId: String
+            orderId: String
         ): ZIO[Any, SQLException, List[OrderProduct]] =
           run(orderItems.filter(_.orderId == lift(orderId)))
 
         override def insertBatch(
-          orderProductList: List[OrderProduct]
+            orderProductList: List[OrderProduct]
         ): ZIO[Any, SQLException, List[Long]] =
           run(
             liftQuery(orderProductList)
@@ -110,7 +102,7 @@ object OrderProductDao {
           ) // example of batch insert.
 
         override def removeByOrder(
-          orderId: String
+            orderId: String
         ): ZIO[Any, SQLException, List[OrderProduct]] =
           run(orderItems.filter(_.orderId == lift(orderId)))
       }

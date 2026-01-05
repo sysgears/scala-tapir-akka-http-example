@@ -3,9 +3,7 @@ package com.example.models.forms
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-/**
-  * Tests for sign up form validation.
-  */
+/** Tests for sign up form validation. */
 class SignUpFormUnitTest extends AsyncFlatSpec with Matchers {
 
   val form: SignUpForm = SignUpForm(

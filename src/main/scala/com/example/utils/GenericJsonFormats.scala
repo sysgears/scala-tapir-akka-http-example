@@ -7,9 +7,7 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.Try
 
-/**
-  * Contains circe formatters for dates.
-  */
+/** Contains circe formatters for dates. */
 object GenericJsonFormats {
 
   val formatter = new DateTimeFormatterBuilder()
@@ -17,8 +15,10 @@ object GenericJsonFormats {
     .appendLiteral('T')
     .append(DateTimeFormatter.ISO_LOCAL_TIME)
     .toFormatter();
+
   implicit val dateEncoder =
     Encoder.encodeString.contramap[LocalDateTime](_.format(formatter))
+
   implicit val dateDecoder = Decoder.decodeString.emap[LocalDateTime](str => {
     Try(LocalDateTime.parse(str, formatter)).toEither.left.map(_.getMessage)
   })
@@ -26,8 +26,7 @@ object GenericJsonFormats {
   implicit val encodeInstant: Encoder[Instant] =
     Encoder.encodeString.contramap[Instant](_.toString)
 
-  implicit val decodeInstant: Decoder[Instant] = Decoder.decodeString.emapTry {
-    str =>
-      Try(Instant.parse(str))
+  implicit val decodeInstant: Decoder[Instant] = Decoder.decodeString.emapTry { str =>
+    Try(Instant.parse(str))
   }
 }

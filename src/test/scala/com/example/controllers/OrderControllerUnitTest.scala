@@ -6,14 +6,7 @@ import java.time.LocalDateTime
 import com.example.auth.{TapirAuthentication, TapirSecurity}
 import com.example.errors.{BadRequest, NotFound}
 import com.example.models.forms.{CreateOrderForm, OrderProductForm}
-import com.example.models.{
-  Order,
-  OrderRecord,
-  OrderWithRecords,
-  Product,
-  Roles,
-  User
-}
+import com.example.models.{Order, OrderRecord, OrderWithRecords, Product, Roles, User}
 import com.example.services.OrderService
 import com.example.services.OrderService.OrdersService
 import com.example.utils.Util
@@ -33,13 +26,9 @@ import zio.{ZIO, ZLayer}
 
 import scala.concurrent.Future
 
-/**
-  * Contains example of mocking authentication.
-  */
-class OrderControllerUnitTest
-    extends AsyncFlatSpec
-    with Matchers
-    with LazyLogging {
+/** Contains example of mocking authentication. */
+class OrderControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
+
   val testUser: User = User(
     Util.generateUuid,
     "test name",
@@ -100,7 +89,7 @@ class OrderControllerUnitTest
   it should "Return order details" in {
     // preparations
     val orderService = mock[OrdersService]
-    val orderId = Util.generateUuid
+    val orderId      = Util.generateUuid
     val orderResponse = OrderWithRecords(
       Order(
         orderId,
@@ -149,7 +138,7 @@ class OrderControllerUnitTest
   it should "Return NotFound to order details request for not-existing order" in {
     // preparations
     val orderService = mock[OrdersService]
-    val orderId = Util.generateUuid
+    val orderId      = Util.generateUuid
     when(orderService.getOrderDetails(orderId)).thenReturn(ZIO.fail(NotFound()))
     val orderController = new OrderController(
       new TapirSecurity(ZLayer.succeed(authentication)),

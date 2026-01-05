@@ -20,8 +20,7 @@ object Jwt {
   trait Service {
     def generateJwt(userId: String): UIO[String]
 
-    /**
-      * Extracts user id from jwt token
+    /** Extracts user id from jwt token
       *
       * @param jwt token from authorization header.
       * @return optional user id. Or fails with exception
@@ -46,10 +45,10 @@ object Jwt {
           ZIO.attempt {
             val jwt = Jwts
               .builder()
-              .id(UUID.randomUUID.toString) // id for jwt
-              .issuedAt(Date.from(now)) // time from which token is active
+              .id(UUID.randomUUID.toString)                       // id for jwt
+              .issuedAt(Date.from(now))                           // time from which token is active
               .expiration(Date.from(now.plusSeconds(ttlSeconds))) // time to which token is active
-              .signWith( // signing jwt.
+              .signWith(                                          // signing jwt.
                 Keys.hmacShaKeyFor(
                   secret.getBytes(StandardCharsets.UTF_8.toString)
                 )
@@ -60,22 +59,24 @@ object Jwt {
         }
 
         override def extractUserIdFromJwt(jwt: String): Task[Option[String]] = {
-          ZIO.attempt {
-            val decodedJwtStr =
-              URLDecoder.decode(jwt, StandardCharsets.UTF_8.toString)
-            Jwts
-              .parser()
-              .verifyWith(
-                Keys.hmacShaKeyFor(
-                  secret.getBytes(StandardCharsets.UTF_8.toString)
+          ZIO
+            .attempt {
+              val decodedJwtStr =
+                URLDecoder.decode(jwt, StandardCharsets.UTF_8.toString)
+              Jwts
+                .parser()
+                .verifyWith(
+                  Keys.hmacShaKeyFor(
+                    secret.getBytes(StandardCharsets.UTF_8.toString)
+                  )
                 )
-              )
-              .build()
-              .parseSignedClaims(decodedJwtStr)
-          } map { claims =>
-            val jwtClaims: Claims = claims.getPayload
-            Util.emptyStringToOption(jwtClaims.get("userId").toString)
-          }
+                .build()
+                .parseSignedClaims(decodedJwtStr)
+            }
+            .map { claims =>
+              val jwtClaims: Claims = claims.getPayload
+              Util.emptyStringToOption(jwtClaims.get("userId").toString)
+            }
         }
       }
     }

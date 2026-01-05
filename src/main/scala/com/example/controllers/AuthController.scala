@@ -6,13 +6,7 @@ import com.example.models.forms.{SignInForm, SignUpForm}
 import com.example.services.AuthService
 import com.example.services.AuthService.Authentication
 import com.example.utils.ZioUtil
-import sttp.tapir.{
-  endpoint,
-  oneOf,
-  oneOfDefaultVariant,
-  oneOfVariant,
-  statusCode
-}
+import sttp.tapir.{endpoint, oneOf, oneOfDefaultVariant, oneOfVariant, statusCode}
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe.jsonBody
 import io.circe.generic.auto._
@@ -24,16 +18,13 @@ import zio.ULayer
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Controller, which contains auth functions - sign in and sign up.
+/** Controller, which contains auth functions - sign in and sign up.
   *
   * @param authService service for the controller.
   */
 class AuthController(authService: ULayer[Authentication]) {
 
-  /**
-    * Sign in endpoint defining.
-    */
+  /** Sign in endpoint defining. */
   val signInEndpoint = endpoint.post // POST endpoint
     .in("signIn") // /signIn uri
     .description("Sign in endpoint.")
@@ -46,15 +37,13 @@ class AuthController(authService: ULayer[Authentication]) {
       jsonBody[Token]
         .description("Bearer token for authorization header")
         .example(Token("lkngla2pj45ij3oijma2oij..."))
-    ) // described response
+    )                                 // described response
     .errorOut(jsonBody[ErrorMessage]) // described error response type, will return string as json with http 400 code
-    .serverLogic { form => // defining logic for the endpoint.
+    .serverLogic { form =>            // defining logic for the endpoint.
       ZioUtil.foldRunToFuture(AuthService.signIn(form).provide(authService))
     }
 
-  /**
-    * Sign up endpoint defining.
-    */
+  /** Sign up endpoint defining. */
   val signUpEndpoint = endpoint.post // POST endpoint
     .in("signUp") // /signUp defining.
     .description("Sign up endpoint.")

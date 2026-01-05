@@ -20,24 +20,21 @@ import zio.ULayer
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
-  * Contains admin products endpoints.
+/** Contains admin products endpoints.
   *
   * @param tapirSecurity       security endpoint.
   * @param adminProductService controller service.
   */
-class AdminProductController(tapirSecurity: TapirSecurity,
-                             adminProductService: ULayer[AdminProducts])
+class AdminProductController(tapirSecurity: TapirSecurity, adminProductService: ULayer[AdminProducts])
     extends LazyLogging {
 
-  /**
-    * Extracts all products.
+  /** Extracts all products.
     */
   val adminProductsViewEndpoint = tapirSecurity
     .tapirSecurityEndpoint(List(Roles.Admin))
-    .get // GET endpoint
+    .get                                                 // GET endpoint
     .description("Extracts products list for the admin") // endpoint description
-    .in("admin" / "products") // /admin/products uri
+    .in("admin" / "products")                            // /admin/products uri
     .out(
       jsonBody[List[Product]]
         .description("List of products")
@@ -46,59 +43,56 @@ class AdminProductController(tapirSecurity: TapirSecurity,
             Product(Util.generateUuid, "test product", "test description", 5.0)
           )
         )
-    ) // defined response
+    )                        // defined response
     .serverLogic { _ => _ => // endpoint logic
       ZioUtil.foldRunToFuture(
         AdminProductService.findAllProducts().provide(adminProductService)
-    )
+      )
     }
 
-  /**
-    * Creates new product.
+  /** Creates new product.
     */
   val createProductEndpoint = tapirSecurity
     .tapirSecurityEndpoint(List(Roles.Admin))
-    .post // POST endpoint
+    .post                               // POST endpoint
     .description("Creates new product") // endpoint description
-    .in("admin" / "products") // /admin/products uri
+    .in("admin" / "products")           // /admin/products uri
     .in(
       jsonBody[NewProductForm]
         .description("Entity with data to create new product")
         .example(NewProductForm("test product", "test description", 5.0))
-    ) // defines request body
-    .out(statusCode(StatusCode.Created)) // defined static success response http code.
+    )                                     // defines request body
+    .out(statusCode(StatusCode.Created))  // defined static success response http code.
     .serverLogic { _ => newProductForm => // endpoint logic
       ZioUtil.foldRunToFuture(
         AdminProductService.insert(newProductForm).provide(adminProductService)
-    )
+      )
     }
 
-  /**
-    * Updates product.
+  /** Updates product.
     */
   val updateProductEndpoint = tapirSecurity
     .tapirSecurityEndpoint(List(Roles.Admin))
-    .put // PUT endpoint
+    .put                                     // PUT endpoint
     .description("Updates existing product") // endpoint description
     .in(
       "admin" / "products" / path[String]("productId")
         .example(Util.generateUuid)
-    ) // /admin/products/:productId
+    )                                                              // /admin/products/:productId
     .in(jsonBody[Product].description("Product with new updates")) // defined request body
-    .out(jsonBody[String].description("Returns success message")) // defined response body
-    .serverLogic { _ => args => // endpoint logic
+    .out(jsonBody[String].description("Returns success message"))  // defined response body
+    .serverLogic { _ => args =>                                    // endpoint logic
       val product = args._2
       ZioUtil.foldRunToFuture(
         AdminProductService.update(product).provide(adminProductService)
-    )
+      )
     }
 
-  /**
-    * Removes product.
+  /** Removes product.
     */
   val deleteProductEndpoint = tapirSecurity
     .tapirSecurityEndpoint(List(Roles.Admin))
-    .delete // DELETE endpoint
+    .delete                                           // DELETE endpoint
     .description("Removes product from product list") // endpoint description
     .in(
       "admin" / "products" / path[String]("productId")
@@ -116,8 +110,7 @@ class AdminProductController(tapirSecurity: TapirSecurity,
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val adminProductEndpoints
-    : List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(
+  val adminProductEndpoints: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(
     adminProductsViewEndpoint,
     createProductEndpoint,
     updateProductEndpoint,

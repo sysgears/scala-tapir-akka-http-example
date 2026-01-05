@@ -21,10 +21,7 @@ import zio.{ZIO, ZLayer}
 
 import scala.concurrent.Future
 
-class AuthControllerUnitTest
-    extends AsyncFlatSpec
-    with Matchers
-    with LazyLogging {
+class AuthControllerUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
 
   it should "log in correctly" in {
     val authService = mock[Authentication]
@@ -45,9 +42,7 @@ class AuthControllerUnitTest
       .send(backendStub)
 
     // then
-    response.map(
-      x => logger.info(s"signIn expecting Token message body: ${x.body}")
-    )
+    response.map(x => logger.info(s"signIn expecting Token message body: ${x.body}"))
     response.map(_.body shouldBe Right(Token("password").asJson.noSpaces))
   }
 

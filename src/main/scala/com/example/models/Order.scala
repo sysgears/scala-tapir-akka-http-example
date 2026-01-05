@@ -2,16 +2,22 @@ package com.example.models
 
 import java.time.LocalDateTime
 
-case class Order(id: String, userId: String, created: LocalDateTime, status: String, lastUpdated: LocalDateTime, comment: String)
+case class Order(
+    id: String,
+    userId: String,
+    created: LocalDateTime,
+    status: String,
+    lastUpdated: LocalDateTime,
+    comment: String
+)
 
-/**
- * Contains appropriate statuses for orders.
- */
+/** Contains appropriate statuses for orders.
+  */
 object Order {
-  final val NEW_STATUS = "new"
+  final val NEW_STATUS         = "new"
   final val UNPROCESSED_STATUS = "unprocessed"
-  final val PROCESSING_STATUS = "processing"
-  final val COMPLETED_STATUS = "completed"
+  final val PROCESSING_STATUS  = "processing"
+  final val COMPLETED_STATUS   = "completed"
 
   final val appropriateStatuses = Seq(NEW_STATUS, UNPROCESSED_STATUS, PROCESSING_STATUS, COMPLETED_STATUS)
 }

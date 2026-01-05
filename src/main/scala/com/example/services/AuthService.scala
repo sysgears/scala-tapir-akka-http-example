@@ -12,8 +12,7 @@ import zio.{ZIO, ZLayer}
 
 import java.time.LocalDateTime
 
-/**
-  * Service for the AuthController.
+/** Service for the AuthController.
   *
   * Contains functions, required for the controller's endpoints.
   */
@@ -23,15 +22,14 @@ object AuthService extends LazyLogging {
 
   trait Service {
 
-    /**
-      * Signs in user.
+    /** Signs in user.
+     *
       * @param form contains login and password for sign in.
       * @return either error message or token class with jwt token.
       */
     def signIn(form: SignInForm): ZIO[Any, ErrorMessage, Token]
 
-    /**
-      * Registers user.
+    /** Registers user.
       *
       * Id for the new user is created here to keep determinism for database
       *
@@ -43,14 +41,13 @@ object AuthService extends LazyLogging {
 
   def signIn(form: SignInForm): ZIO[Authentication, ErrorMessage, Token] =
     ZIO.serviceWithZIO[Authentication](_.signIn(form))
+
   def signUp(form: SignUpForm): ZIO[Authentication, ErrorInfo, Unit] =
     ZIO.serviceWithZIO[Authentication](_.signUp(form))
 
-  val live: ZLayer[JwtService with UserRepository,
-                   Nothing,
-                   services.AuthService.Authentication] = ZLayer {
+  val live: ZLayer[JwtService with UserRepository, Nothing, services.AuthService.Authentication] = ZLayer {
     for {
-      userDao <- ZIO.service[UserRepository]
+      userDao    <- ZIO.service[UserRepository]
       jwtService <- ZIO.service[JwtService]
     } yield {
       new Service {
@@ -63,9 +60,11 @@ object AuthService extends LazyLogging {
             }
             .flatMap {
               case Some(user) =>
-                if (CryptUtils
-                      .matchBcryptHash(form.password, user.passwordHash)
-                      .getOrElse(false)) {
+                if (
+                  CryptUtils
+                    .matchBcryptHash(form.password, user.passwordHash)
+                    .getOrElse(false)
+                ) {
                   logger.debug(s"User with id ${user.id} has logged in")
                   jwtService.generateJwt(user.id).map(Token(_))
                 } else {

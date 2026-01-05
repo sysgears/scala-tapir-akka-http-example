@@ -8,9 +8,7 @@ import zio.{ZIO, ZLayer}
 
 import java.sql.SQLException
 
-/**
-  * Dao for products.
-  */
+/** Dao for products. */
 object ProductDao {
 
   type ProductRepository = ProductDao.Service
@@ -24,19 +22,16 @@ object ProductDao {
 
     def findAll(): ZIO[Any, SQLException, List[Product]]
 
-    def findPaginated(take: Int,
-                      offset: Int): ZIO[Any, SQLException, List[Product]]
+    def findPaginated(take: Int, offset: Int): ZIO[Any, SQLException, List[Product]]
 
     def countProducts(): ZIO[Any, SQLException, Long]
 
     def findByIds(
-      productIds: Seq[String]
+        productIds: Seq[String]
     ): ZIO[Any, SQLException, List[Product]]
   }
 
-  val live: ZLayer[Quill.Postgres[SnakeCase],
-                   Nothing,
-                   dao.ProductDao.ProductRepository] = ZLayer {
+  val live: ZLayer[Quill.Postgres[SnakeCase], Nothing, dao.ProductDao.ProductRepository] = ZLayer {
     for {
       context <- ZIO.service[Quill.Postgres[SnakeCase]]
     } yield {
@@ -44,8 +39,7 @@ object ProductDao {
 
         import context._
 
-        /**
-          * Query schema for products.
+        /** Query schema for products.
           */
         private val products = quote {
           querySchema[Product]("products")
@@ -66,8 +60,8 @@ object ProductDao {
           run(products)
 
         override def findPaginated(
-          take: Int,
-          offset: Int
+            take: Int,
+            offset: Int
         ): ZIO[Any, SQLException, List[Product]] =
           run(products.drop(lift(offset)).take(lift(take)))
 
@@ -75,7 +69,7 @@ object ProductDao {
           run(products.size)
 
         override def findByIds(
-          productIds: Seq[String]
+            productIds: Seq[String]
         ): ZIO[Any, SQLException, List[Product]] =
           run(
             products

@@ -13,8 +13,7 @@ import zio.{ZIO, ZLayer}
 
 import java.time.LocalDateTime
 
-/**
-  * Service for the OrderController.
+/** Service for the OrderController.
   *
   * Contains functions, required for the controller's endpoints.
   */
@@ -24,25 +23,21 @@ object OrderService extends LazyLogging {
 
   trait Service {
 
-    /**
-      * Creates new order and associate it to the user.
+    /** Creates new order and associate it to the user.
       *
       * @param userId   user which made the order
       * @param newOrder order itself.
       */
-    def createOrder(userId: String,
-                    newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, Unit]
+    def createOrder(userId: String, newOrder: CreateOrderForm): ZIO[Any, ErrorInfo, Unit]
 
-    /**
-      * Extracts orders for the user without their details.
+    /** Extracts orders for the user without their details.
       *
       * @param userId user, which extracts their orders.
       * @return orders for the user.
       */
     def findOrdersForUser(userId: String): ZIO[Any, ErrorInfo, List[Order]]
 
-    /**
-      * Extracts order details for the order.
+    /** Extracts order details for the order.
       *
       * @param orderId order to extract records data.
       * @return extended order with records, which contains order details.
@@ -51,28 +46,29 @@ object OrderService extends LazyLogging {
   }
 
   def createOrder(
-    userId: String,
-    newOrder: CreateOrderForm
+      userId: String,
+      newOrder: CreateOrderForm
   ): ZIO[OrdersService, ErrorInfo, Unit] =
     ZIO.serviceWithZIO[OrdersService](_.createOrder(userId, newOrder))
 
   def findOrdersForUser(
-    userId: String
+      userId: String
   ): ZIO[OrdersService, ErrorInfo, List[Order]] =
     ZIO.serviceWithZIO[OrdersService](_.findOrdersForUser(userId))
 
   def getOrderDetails(
-    orderId: String
+      orderId: String
   ): ZIO[OrdersService, ErrorInfo, OrderWithRecords] =
     ZIO.serviceWithZIO[OrdersService](_.getOrderDetails(orderId))
 
-  val live
-    : ZLayer[OrderProductRepository with ProductRepository with OrderRepository,
-             Nothing,
-             services.OrderService.OrdersService] = ZLayer {
+  val live: ZLayer[
+    OrderProductRepository with ProductRepository with OrderRepository,
+    Nothing,
+    services.OrderService.OrdersService
+  ] = ZLayer {
     for {
-      orderDao <- ZIO.service[OrderRepository]
-      productDao <- ZIO.service[ProductRepository]
+      orderDao        <- ZIO.service[OrderRepository]
+      productDao      <- ZIO.service[ProductRepository]
       orderProductDao <- ZIO.service[OrderProductRepository]
     } yield {
       new OrderService(orderDao, productDao, orderProductDao)
@@ -80,14 +76,13 @@ object OrderService extends LazyLogging {
   }
 }
 
-class OrderService(orderDao: OrderRepository,
-                   productDao: ProductRepository,
-                   orderProductDao: OrderProductRepository)
+class OrderService(orderDao: OrderRepository, productDao: ProductRepository, orderProductDao: OrderProductRepository)
     extends OrderService.OrdersService
     with LazyLogging {
+
   override def createOrder(
-    userId: String,
-    newOrder: CreateOrderForm
+      userId: String,
+      newOrder: CreateOrderForm
   ): ZIO[Any, ErrorInfo, Unit] = {
     val order = Order(
       Util.generateUuid,
@@ -97,9 +92,7 @@ class OrderService(orderDao: OrderRepository,
       LocalDateTime.now(),
       newOrder.comment
     )
-    val products = newOrder.products.map(
-      product => OrderProduct(order.id, product.productId, product.quantity)
-    )
+    val products = newOrder.products.map(product => OrderProduct(order.id, product.productId, product.quantity))
     (for {
       _ <- orderDao.insert(order)
       updatedProducts = products.map(_.copy(orderId = order.id))
@@ -117,7 +110,7 @@ class OrderService(orderDao: OrderRepository,
   }
 
   override def findOrdersForUser(
-    userId: String
+      userId: String
   ): ZIO[Any, ErrorInfo, List[Order]] = {
     logger.debug(s"Received request to extract orders for user with id $userId")
     orderDao.findForUser(userId).mapError { error =>
@@ -129,14 +122,13 @@ class OrderService(orderDao: OrderRepository,
     }
   }
 
-  /**
-    * Extracts order details for the order.
+  /** Extracts order details for the order.
     *
     * @param orderId order to extract records data.
     * @return extended order with records, which contains order details.
     */
   def getOrderDetails(
-    orderId: String
+      orderId: String
   ): ZIO[Any, ErrorInfo, OrderWithRecords] = {
     logger.trace(
       s"Received request to extract details for order with id $orderId"

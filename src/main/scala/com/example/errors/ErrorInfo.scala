@@ -1,8 +1,6 @@
 package com.example.errors
 
-/**
- * Trait for custom http code handling for error cases.
- */
+/** Trait for custom http code handling for error cases. */
 sealed trait ErrorInfo {
   val msg: String
 }
@@ -27,4 +25,3 @@ case class BadRequest(msg: String) extends ErrorInfo
 
 /** Represents http 500. */
 case class InternalServerError(msg: String) extends ErrorInfo
-

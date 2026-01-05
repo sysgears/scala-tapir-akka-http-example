@@ -8,9 +8,7 @@ import com.example.models.User
 import com.typesafe.scalalogging.LazyLogging
 import zio.{ZIO, ZLayer}
 
-/**
-  * Contains authentication functionality.
-  */
+/** Contains authentication functionality. */
 object TapirAuthentication extends LazyLogging {
 
   type TapirAuth = TapirAuthentication.Service
@@ -24,22 +22,17 @@ object TapirAuthentication extends LazyLogging {
   def authenticate(token: String): ZIO[TapirAuth, ErrorInfo, User] =
     ZIO.serviceWithZIO[TapirAuth](_.authenticate(token))
 
-  val live: ZLayer[UserRepository with JwtService,
-                   Nothing,
-                   auth.TapirAuthentication.TapirAuth] = ZLayer {
+  val live: ZLayer[UserRepository with JwtService, Nothing, auth.TapirAuthentication.TapirAuth] = ZLayer {
     for {
       jwtService <- ZIO.service[JwtService]
-      userDao <- ZIO.service[UserRepository]
+      userDao    <- ZIO.service[UserRepository]
     } yield {
       new Service {
 
         override def authenticate(token: String): ZIO[Any, ErrorInfo, User] =
           jwtService
             .extractUserIdFromJwt(token)
-            .mapError(
-              error =>
-                Unauthorized("Token is expired. You need to log in first")
-            )
+            .mapError(error => Unauthorized("Token is expired. You need to log in first"))
             .flatMap {
               case Some(userId) =>
                 userDao

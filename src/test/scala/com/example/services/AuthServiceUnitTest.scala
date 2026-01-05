@@ -37,8 +37,8 @@ object AuthServiceUnitTest extends ZIOSpecDefault {
       /** Case when signIn function received correct form. */
       test("comparing correct user correctly") {
         // preparations
-        val userDao = mock[UserRepository]
-        val jwtService = mock[JwtService]
+        val userDao     = mock[UserRepository]
+        val jwtService  = mock[JwtService]
         val authService = AuthService.live
 
         //given
@@ -61,8 +61,8 @@ object AuthServiceUnitTest extends ZIOSpecDefault {
       },
       test("comparing incorrect user correctly") {
         // preparations
-        val userDao = mock[UserRepository]
-        val jwtService = mock[JwtService]
+        val userDao     = mock[UserRepository]
+        val jwtService  = mock[JwtService]
         val authService = AuthService.live
 
         //given
@@ -85,8 +85,8 @@ object AuthServiceUnitTest extends ZIOSpecDefault {
       },
       test("return correct result if user not found") {
         // preparations
-        val userDao = mock[UserRepository]
-        val jwtService = mock[JwtService]
+        val userDao     = mock[UserRepository]
+        val jwtService  = mock[JwtService]
         val authService = AuthService.live
 
         //given
@@ -108,8 +108,8 @@ object AuthServiceUnitTest extends ZIOSpecDefault {
       /** Case when registration form is correct. */
       test("register new user correctly") {
         // preparations
-        val userDao = mock[UserRepository]
-        val jwtService = mock[JwtService]
+        val userDao     = mock[UserRepository]
+        val jwtService  = mock[JwtService]
         val authService = AuthService.live
 
         //given
@@ -138,11 +138,11 @@ object AuthServiceUnitTest extends ZIOSpecDefault {
           assertTrue(true)
         }
       },
-      /** Case for registration when user with that email exists.  */
+      /** Case for registration when user with that email exists. */
       test("return conflict for registration new user") {
         // preparations
-        val userDao = mock[UserRepository]
-        val jwtService = mock[JwtService]
+        val userDao     = mock[UserRepository]
+        val jwtService  = mock[JwtService]
         val authService = AuthService.live
 
         //given
@@ -174,8 +174,8 @@ object AuthServiceUnitTest extends ZIOSpecDefault {
       },
       test("return badRequest when registration form is invalid") {
         // preparations
-        val userDao = mock[UserRepository]
-        val jwtService = mock[JwtService]
+        val userDao     = mock[UserRepository]
+        val jwtService  = mock[JwtService]
         val authService = AuthService.live
 
         //given

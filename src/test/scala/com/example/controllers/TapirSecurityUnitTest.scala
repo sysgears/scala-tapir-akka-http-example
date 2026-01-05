@@ -24,17 +24,13 @@ import zio.{ZIO, ZLayer}
 
 import scala.concurrent.Future
 
-/**
-  * Contains tests for endpoint security. Only TapirSecurity is checked.
+/** Contains tests for endpoint security. Only TapirSecurity is checked.
   *
   * OrdersController is used because using ready to go endpoint is faster.
   *
   * Only invalid cases are present, because other tests using this security will use success auth case.
   */
-class TapirSecurityUnitTest
-    extends AsyncFlatSpec
-    with Matchers
-    with LazyLogging {
+class TapirSecurityUnitTest extends AsyncFlatSpec with Matchers with LazyLogging {
 
   val testUser: User = User(
     Util.generateUuid,
@@ -126,7 +122,7 @@ class TapirSecurityUnitTest
   it should "Reject user without jwt token" in {
     // preparations
     val authentication = mock[TapirAuth]
-    val orderService = mock[OrdersService]
+    val orderService   = mock[OrdersService]
     val orderController = new OrderController(
       new TapirSecurity(ZLayer.succeed(authentication)),
       ZLayer.succeed(orderService)

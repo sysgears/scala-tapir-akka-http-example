@@ -5,8 +5,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object Util {
 
-  /**
-    * Function, which converts either with future to future with either.
+  /** Function, which converts either with future to future with either.
+   *
     * @param e target either
     * @param ec execution context for future convertion
     * @tparam A error type
@@ -14,7 +14,7 @@ object Util {
     * @return future with either.
     */
   def foldEitherOfFuture[A, B](
-    e: Either[A, Future[B]]
+      e: Either[A, Future[B]]
   )(implicit ec: ExecutionContext): Future[Either[A, B]] =
     e match {
       case Left(s)  => Future.successful(Left(s))

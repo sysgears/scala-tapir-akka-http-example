@@ -18,40 +18,35 @@ import zio.ULayer
 
 import scala.concurrent.Future
 
-/**
-  * Contains endpoints, related to products and available for user
+/** Contains endpoints, related to products and available for user
   * @param tapirSecurity security endpoint
   * @param productService service for the controller.
   */
-class ProductController(tapirSecurity: TapirSecurity,
-                        productService: ULayer[ProductService]) {
+class ProductController(tapirSecurity: TapirSecurity, productService: ULayer[ProductService]) {
 
-  /**
-    * Retrieves paginated list of products.
-    */
+  /** Retrieves paginated list of products. */
   val paginatedProductListEndpoint = tapirSecurity
-    .tapirSecurityEndpoint(List(Roles.User)) // restricted, only for users
-    .get // GET endpoint
+    .tapirSecurityEndpoint(List(Roles.User))                  // restricted, only for users
+    .get                                                      // GET endpoint
     .description("Shows paginated list of products for user") // endpoint description
-    .in("products") // /products uri
-    .in(EndpointInput.derived[PaginatedEndpointArguments]) // arguments described in that class
+    .in("products")                                           // /products uri
+    .in(EndpointInput.derived[PaginatedEndpointArguments])    // arguments described in that class
     .out(
       jsonBody[PaginatedProductListViewResponse]
         .description("Contains pagination metadata and retrieved product list")
-    ) // defined response format
-    .serverLogic { _ => args => // server logic
+    )                                           // defined response format
+    .serverLogic { _ => args =>                 // server logic
       if (args.page < 1 || args.pageSize < 1) { // page arguments validation, we don't want negative offset or page size
         Future.successful(Left(BadRequest("Page arguments are invalid!")))
       } else {
         ZioUtil.foldRunToFuture(
           ProductService.extractPaginatedProducts(args).provide(productService)
         )
-    }
+      }
     }
 
   /** Convenient way to assemble endpoints from the controller and then concat this route to main route. */
-  val productEndpoints
-    : List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(
+  val productEndpoints: List[ServerEndpoint[AkkaStreams with WebSockets, Future]] = List(
     paginatedProductListEndpoint
   )
 }
