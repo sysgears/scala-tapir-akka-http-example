@@ -2,27 +2,24 @@
 
 <desc>Advanced back-end service with Tapir, Akka-Http, Quill and ZIO</desc>
 
-Task - create service, similar to some kind of shop using Tapir with 
-Akka-Http interpreter, Quill, ZIO and circe json. Also, show how to integrate ZIO into such service
+This example implements service, similar to some kind of shop using Tapir with 
+Akka-Http interpreter, Quill, ZIO and circe json. Also, this example shows how to integrate ZIO into such service
 
 This example contains:
 
-- work with database using Quill 
+- Work with database using zio-Quill 
 - Simple jwt authentication and role authorization to access some endpoints
-- sign in and sign out endpoints
-- error handling customization
-- failed decoding customization
-- request wrappers (request handling time tracker)
-- adding prometheus metrics
-- connecting swagger docs
-- set and describe http codes for error response
+- Sign in and sign out endpoints
+- Error handling customization
+- Failed decoding customization
+- Request wrappers (request handling time tracker)
+- Adding prometheus metrics
+- Connecting swagger docs
+- Set and describe http codes for error response
 - Tapir endpoints testing, including mocking security
 - Integrating ZIO into code - configuring services, making layers and executing them at the edges of the app
 
-Also example contains Quill as library which works with database, similar to Slick
-
 Note: to run this example in first time, you have to apply sql scripts from resource directory!
-
 
 Stack
 -
