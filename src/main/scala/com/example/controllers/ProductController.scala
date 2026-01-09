@@ -4,8 +4,8 @@ import com.example.auth.TapirSecurity
 import com.example.errors.BadRequest
 import com.example.models.forms.PaginatedEndpointArguments
 import com.example.models.{PaginatedProductListViewResponse, Roles}
-import com.example.services.ProductService
-import com.example.services.ProductService.ProductService
+import com.example.services.ProductServiceImpl
+import com.example.services.ProductServiceImpl.ProductService
 import com.example.utils.ZioUtil
 import io.circe.generic.auto._
 import sttp.capabilities.WebSockets
@@ -40,7 +40,7 @@ class ProductController(tapirSecurity: TapirSecurity, productService: ULayer[Pro
         Future.successful(Left(BadRequest("Page arguments are invalid!")))
       } else {
         ZioUtil.foldRunToFuture(
-          ProductService.extractPaginatedProducts(args).provide(productService)
+          ProductServiceImpl.extractPaginatedProducts(args).provide(productService)
         )
       }
     }

@@ -14,7 +14,7 @@ import com.example.dao._
 import com.example.errors.ErrorHandler
 import com.example.services.AuthService.Authentication
 import com.example.services.OrderService.OrdersService
-import com.example.services.ProductService.ProductService
+import com.example.services.ProductServiceImpl.ProductService
 import com.example.services._
 import com.example.services.admin.AdminOrderService.AdminOrders
 import com.example.services.admin.AdminProductService.AdminProducts
@@ -69,7 +69,7 @@ trait MainModule {
     OrderService.live
 
   lazy val productService: ZLayer[ProductRepository, Nothing, ProductService] =
-    ProductService.live
+    ProductServiceImpl.live
 
   lazy val adminProductService: ZLayer[ProductRepository, Nothing, AdminProducts] =
     AdminProductService.live
